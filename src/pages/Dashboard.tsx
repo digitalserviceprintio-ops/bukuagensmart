@@ -1,9 +1,30 @@
-import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store } from 'lucide-react';
 import { mockSummary, mockTransactions, formatRupiah } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
+import { useToko } from '@/hooks/useToko';
+import BukaTokoModal from '@/components/BukaTokoModal';
+import TutupTokoDialog from '@/components/TutupTokoDialog';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { tokoHariIni, loading, bukaToko, tutupToko } = useToko();
+  const [tutupOpen, setTutupOpen] = useState(false);
+
+  const needsBuka = !loading && (!tokoHariIni || tokoHariIni.status !== 'OPEN' && tokoHariIni.status !== 'CLOSED');
+  const isOpen = tokoHariIni?.status === 'OPEN';
+
+  if (loading) return null;
+
+  if (needsBuka) {
+    return (
+      <BukaTokoModal
+        onSubmit={(kas, rek, catatan) => {
+          bukaToko(kas, rek, catatan);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="pb-20 min-h-screen">
@@ -14,16 +35,33 @@ export default function Dashboard() {
             <p className="text-primary-foreground/70 text-sm">Selamat datang,</p>
             <h1 className="text-lg font-bold text-primary-foreground">Agen Budi Santoso</h1>
           </div>
-          <button className="relative p-2 rounded-xl bg-primary-foreground/10">
-            <Bell className="h-5 w-5 text-primary-foreground" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-          </button>
+          <div className="flex items-center gap-2">
+            {isOpen && (
+              <span className="px-2 py-1 bg-secondary/20 text-secondary text-[10px] font-bold rounded-full flex items-center gap-1">
+                <Store className="h-3 w-3" /> BUKA
+              </span>
+            )}
+            {tokoHariIni?.status === 'CLOSED' && (
+              <span className="px-2 py-1 bg-destructive/20 text-destructive text-[10px] font-bold rounded-full flex items-center gap-1">
+                <Store className="h-3 w-3" /> TUTUP
+              </span>
+            )}
+            <button className="relative p-2 rounded-xl bg-primary-foreground/10">
+              <Bell className="h-5 w-5 text-primary-foreground" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+            </button>
+          </div>
         </div>
 
         {/* Balance Card */}
         <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-5 border border-primary-foreground/10">
           <p className="text-primary-foreground/70 text-xs font-medium mb-1">Saldo Kas Agen</p>
           <p className="text-3xl font-bold text-primary-foreground">{formatRupiah(mockSummary.balance)}</p>
+          {isOpen && tokoHariIni && (
+            <p className="text-primary-foreground/50 text-[10px] mt-1">
+              Kas awal: {formatRupiah(tokoHariIni.saldo_kas_awal)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -41,6 +79,19 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Tutup Toko Button */}
+      {isOpen && (
+        <div className="px-5 mt-4">
+          <button
+            onClick={() => setTutupOpen(true)}
+            className="w-full bg-destructive/10 rounded-xl p-3 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          >
+            <Store className="h-4 w-4 text-destructive" />
+            <span className="text-sm font-semibold text-destructive">Tutup Toko</span>
+          </button>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="px-5 mt-6">
@@ -101,6 +152,16 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Tutup Toko Dialog */}
+      {isOpen && tokoHariIni && (
+        <TutupTokoDialog
+          open={tutupOpen}
+          onOpenChange={setTutupOpen}
+          tokoData={tokoHariIni}
+          onTutup={tutupToko}
+        />
+      )}
     </div>
   );
 }
