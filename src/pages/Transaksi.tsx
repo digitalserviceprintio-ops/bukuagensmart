@@ -3,6 +3,8 @@ import { ArrowDownLeft, ArrowUpRight, Wallet, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatRupiah, calculateFee } from '@/data/mockData';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 type TxType = 'tarik' | 'setor' | 'transfer';
 
@@ -18,6 +20,7 @@ export default function Transaksi() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const numAmount = parseInt(amount.replace(/\D/g, '')) || 0;
   const { fee, commission } = calculateFee(selectedType, numAmount);
@@ -27,15 +30,49 @@ export default function Transaksi() {
     setAmount(digits ? parseInt(digits).toLocaleString('id-ID') : '');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (numAmount < 10000 || !customerName) return;
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      setAmount('');
-      setCustomerName('');
-      setCustomerPhone('');
-    }, 2000);
+    setSubmitting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase.from('transactions').insert({
+        user_id: user.id,
+        type: selectedType,
+        amount: numAmount,
+        fee,
+        commission,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        status: 'success',
+      });
+
+      if (error) throw error;
+
+      // Also add commission to cash book
+      if (commission > 0) {
+        await supabase.from('cash_book').insert({
+          user_id: user.id,
+          type: 'income',
+          amount: commission,
+          description: `Komisi ${selectedType} - ${customerName}`,
+          category: 'Komisi',
+        });
+      }
+
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setAmount('');
+        setCustomerName('');
+        setCustomerPhone('');
+      }, 2000);
+    } catch (err: any) {
+      toast({ title: 'Gagal', description: err.message, variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (showSuccess) {
@@ -80,43 +117,21 @@ export default function Transaksi() {
       <div className="space-y-4">
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">Nama Pelanggan</label>
-          <Input
-            placeholder="Nama lengkap"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            className="h-12 text-base"
-          />
+          <Input placeholder="Nama lengkap" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="h-12 text-base" />
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">No. HP Pelanggan</label>
-          <Input
-            type="tel"
-            placeholder="08xxxxxxxxxx"
-            value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
-            className="h-12 text-base"
-            maxLength={15}
-          />
+          <Input type="tel" placeholder="08xxxxxxxxxx" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="h-12 text-base" maxLength={15} />
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">Nominal</label>
-          <Input
-            placeholder="0"
-            value={amount}
-            onChange={(e) => handleAmountChange(e.target.value)}
-            className="h-14 text-2xl font-bold text-center"
-            inputMode="numeric"
-          />
+          <Input placeholder="0" value={amount} onChange={(e) => handleAmountChange(e.target.value)} className="h-14 text-2xl font-bold text-center" inputMode="numeric" />
         </div>
 
         {/* Quick Amount Buttons */}
         <div className="grid grid-cols-4 gap-2">
           {[50000, 100000, 200000, 500000].map((val) => (
-            <button
-              key={val}
-              onClick={() => handleAmountChange(val.toString())}
-              className="bg-muted rounded-lg py-2 text-xs font-medium text-foreground active:scale-95 transition-transform"
-            >
+            <button key={val} onClick={() => handleAmountChange(val.toString())} className="bg-muted rounded-lg py-2 text-xs font-medium text-foreground active:scale-95 transition-transform">
               {formatRupiah(val)}
             </button>
           ))}
@@ -140,12 +155,8 @@ export default function Transaksi() {
           </div>
         )}
 
-        <Button
-          onClick={handleSubmit}
-          disabled={numAmount < 10000 || !customerName}
-          className="w-full h-14 text-base font-semibold gradient-primary shadow-button disabled:opacity-50"
-        >
-          Proses {txTypes.find(t => t.type === selectedType)?.label}
+        <Button onClick={handleSubmit} disabled={numAmount < 10000 || !customerName || submitting} className="w-full h-14 text-base font-semibold gradient-primary shadow-button disabled:opacity-50">
+          {submitting ? 'Memproses...' : `Proses ${txTypes.find(t => t.type === selectedType)?.label}`}
         </Button>
       </div>
     </div>

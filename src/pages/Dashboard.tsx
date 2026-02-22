@@ -1,18 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store } from 'lucide-react';
-import { mockSummary, mockTransactions, formatRupiah } from '@/data/mockData';
+import { formatRupiah } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { useToko } from '@/hooks/useToko';
+import { supabase } from '@/integrations/supabase/client';
 import BukaTokoModal from '@/components/BukaTokoModal';
 import TutupTokoDialog from '@/components/TutupTokoDialog';
+
+interface TxRow {
+  id: string;
+  type: string;
+  amount: number;
+  customer_name: string;
+  created_at: string;
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { tokoHariIni, loading, bukaToko, tutupToko } = useToko();
   const [tutupOpen, setTutupOpen] = useState(false);
+  const [transactions, setTransactions] = useState<TxRow[]>([]);
+  const [summary, setSummary] = useState({ count: 0, volume: 0, commission: 0 });
 
-  const needsBuka = !loading && (!tokoHariIni || tokoHariIni.status !== 'OPEN' && tokoHariIni.status !== 'CLOSED');
+  const needsBuka = !loading && (!tokoHariIni || (tokoHariIni.status !== 'OPEN' && tokoHariIni.status !== 'CLOSED'));
   const isOpen = tokoHariIni?.status === 'OPEN';
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const { data: txs } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', `${today}T00:00:00`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const rows = (txs || []) as any[];
+      setTransactions(rows);
+      setSummary({
+        count: rows.length,
+        volume: rows.reduce((s: number, t: any) => s + Number(t.amount), 0),
+        commission: rows.reduce((s: number, t: any) => s + Number(t.commission), 0),
+      });
+    };
+    if (!loading) fetchData();
+  }, [loading]);
 
   if (loading) return null;
 
@@ -26,6 +63,8 @@ export default function Dashboard() {
     );
   }
 
+  const balance = tokoHariIni ? Number(tokoHariIni.saldo_kas_awal) + summary.volume : 0;
+
   return (
     <div className="pb-20 min-h-screen">
       {/* Header */}
@@ -33,7 +72,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-primary-foreground/70 text-sm">Selamat datang,</p>
-            <h1 className="text-lg font-bold text-primary-foreground">Agen Budi Santoso</h1>
+            <h1 className="text-lg font-bold text-primary-foreground">Agen</h1>
           </div>
           <div className="flex items-center gap-2">
             {isOpen && (
@@ -48,7 +87,6 @@ export default function Dashboard() {
             )}
             <button className="relative p-2 rounded-xl bg-primary-foreground/10">
               <Bell className="h-5 w-5 text-primary-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
             </button>
           </div>
         </div>
@@ -56,10 +94,10 @@ export default function Dashboard() {
         {/* Balance Card */}
         <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-5 border border-primary-foreground/10">
           <p className="text-primary-foreground/70 text-xs font-medium mb-1">Saldo Kas Agen</p>
-          <p className="text-3xl font-bold text-primary-foreground">{formatRupiah(mockSummary.balance)}</p>
+          <p className="text-3xl font-bold text-primary-foreground">{formatRupiah(balance)}</p>
           {isOpen && tokoHariIni && (
             <p className="text-primary-foreground/50 text-[10px] mt-1">
-              Kas awal: {formatRupiah(tokoHariIni.saldo_kas_awal)}
+              Kas awal: {formatRupiah(Number(tokoHariIni.saldo_kas_awal))}
             </p>
           )}
         </div>
@@ -68,9 +106,9 @@ export default function Dashboard() {
       {/* Stats Row */}
       <div className="px-5 -mt-5 grid grid-cols-3 gap-3">
         {[
-          { label: 'Transaksi', value: mockSummary.todayTransactions.toString(), icon: ArrowDownLeft, color: 'text-info' },
-          { label: 'Volume', value: formatRupiah(mockSummary.todayAmount), icon: ArrowUpRight, color: 'text-secondary' },
-          { label: 'Komisi', value: formatRupiah(mockSummary.todayCommission), icon: TrendingUp, color: 'text-warning' },
+          { label: 'Transaksi', value: summary.count.toString(), icon: ArrowDownLeft, color: 'text-info' },
+          { label: 'Volume', value: formatRupiah(summary.volume), icon: ArrowUpRight, color: 'text-secondary' },
+          { label: 'Komisi', value: formatRupiah(summary.commission), icon: TrendingUp, color: 'text-warning' },
         ].map((stat) => (
           <div key={stat.label} className="bg-card rounded-xl p-3 shadow-card animate-slide-up">
             <stat.icon className={`h-4 w-4 ${stat.color} mb-1`} />
@@ -83,10 +121,7 @@ export default function Dashboard() {
       {/* Tutup Toko Button */}
       {isOpen && (
         <div className="px-5 mt-4">
-          <button
-            onClick={() => setTutupOpen(true)}
-            className="w-full bg-destructive/10 rounded-xl p-3 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-          >
+          <button onClick={() => setTutupOpen(true)} className="w-full bg-destructive/10 rounded-xl p-3 flex items-center justify-center gap-2 active:scale-95 transition-transform">
             <Store className="h-4 w-4 text-destructive" />
             <span className="text-sm font-semibold text-destructive">Tutup Toko</span>
           </button>
@@ -102,11 +137,7 @@ export default function Dashboard() {
             { label: 'Setor Tunai', icon: ArrowUpRight, gradient: 'gradient-success' },
             { label: 'Transfer', icon: Wallet, gradient: 'gradient-primary' },
           ].map((action) => (
-            <button
-              key={action.label}
-              onClick={() => navigate('/transaksi')}
-              className={`${action.gradient} rounded-xl p-4 flex flex-col items-center gap-2 shadow-button active:scale-95 transition-transform`}
-            >
+            <button key={action.label} onClick={() => navigate('/transaksi')} className={`${action.gradient} rounded-xl p-4 flex flex-col items-center gap-2 shadow-button active:scale-95 transition-transform`}>
               <action.icon className="h-6 w-6 text-primary-foreground" />
               <span className="text-xs font-semibold text-primary-foreground">{action.label}</span>
             </button>
@@ -122,45 +153,40 @@ export default function Dashboard() {
             Lihat Semua <ChevronRight className="h-3 w-3" />
           </button>
         </div>
-        <div className="space-y-2">
-          {mockTransactions.slice(0, 4).map((tx) => (
-            <div key={tx.id} className="bg-card rounded-xl p-3 flex items-center gap-3 shadow-card animate-fade-in">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                tx.type === 'tarik' ? 'bg-destructive/10' : tx.type === 'setor' ? 'bg-secondary/10' : 'bg-info/10'
-              }`}>
-                {tx.type === 'tarik' ? (
-                  <ArrowDownLeft className="h-5 w-5 text-destructive" />
-                ) : tx.type === 'setor' ? (
-                  <ArrowUpRight className="h-5 w-5 text-secondary" />
-                ) : (
-                  <Wallet className="h-5 w-5 text-info" />
-                )}
+        {transactions.length === 0 ? (
+          <p className="text-center text-muted-foreground text-sm py-4">Belum ada transaksi hari ini</p>
+        ) : (
+          <div className="space-y-2">
+            {transactions.slice(0, 4).map((tx) => (
+              <div key={tx.id} className="bg-card rounded-xl p-3 flex items-center gap-3 shadow-card animate-fade-in">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  tx.type === 'tarik' ? 'bg-destructive/10' : tx.type === 'setor' ? 'bg-secondary/10' : 'bg-info/10'
+                }`}>
+                  {tx.type === 'tarik' ? <ArrowDownLeft className="h-5 w-5 text-destructive" /> :
+                   tx.type === 'setor' ? <ArrowUpRight className="h-5 w-5 text-secondary" /> :
+                   <Wallet className="h-5 w-5 text-info" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{tx.customer_name}</p>
+                  <p className="text-[10px] text-muted-foreground capitalize">{tx.type} tunai</p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-sm font-bold ${tx.type === 'setor' ? 'text-secondary' : 'text-foreground'}`}>
+                    {tx.type === 'setor' ? '+' : '-'}{formatRupiah(Number(tx.amount))}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {new Date(tx.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{tx.customerName}</p>
-                <p className="text-[10px] text-muted-foreground capitalize">{tx.type} tunai</p>
-              </div>
-              <div className="text-right">
-                <p className={`text-sm font-bold ${tx.type === 'setor' ? 'text-secondary' : 'text-foreground'}`}>
-                  {tx.type === 'setor' ? '+' : '-'}{formatRupiah(tx.amount)}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {tx.timestamp.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tutup Toko Dialog */}
       {isOpen && tokoHariIni && (
-        <TutupTokoDialog
-          open={tutupOpen}
-          onOpenChange={setTutupOpen}
-          tokoData={tokoHariIni}
-          onTutup={tutupToko}
-        />
+        <TutupTokoDialog open={tutupOpen} onOpenChange={setTutupOpen} tokoData={tokoHariIni} onTutup={tutupToko} />
       )}
     </div>
   );
