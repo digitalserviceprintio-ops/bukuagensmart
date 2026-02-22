@@ -11,7 +11,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tokoData: BukaToko;
-  onTutup: (saldoKasAkhir: number, saldoRekeningAkhir: number) => BukaToko | null;
+  onTutup: (saldoKasAkhir: number, saldoRekeningAkhir: number) => Promise<BukaToko | null>;
 }
 
 export default function TutupTokoDialog({ open, onOpenChange, tokoData, onTutup }: Props) {
@@ -19,6 +19,7 @@ export default function TutupTokoDialog({ open, onOpenChange, tokoData, onTutup 
   const [saldoRekening, setSaldoRekening] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [result, setResult] = useState<BukaToko | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -32,14 +33,16 @@ export default function TutupTokoDialog({ open, onOpenChange, tokoData, onTutup 
     return Object.keys(e).length === 0;
   };
 
-  const handleTutup = () => {
+  const handleTutup = async () => {
     if (!validate()) return;
-    const res = onTutup(Number(saldoKas), Number(saldoRekening));
+    setLoading(true);
+    const res = await onTutup(Number(saldoKas), Number(saldoRekening));
     if (res) setResult(res);
+    setLoading(false);
   };
 
-  const selisihKas = result ? (result.saldo_kas_akhir! - result.saldo_kas_awal) : 0;
-  const selisihRekening = result ? (result.saldo_rekening_akhir! - result.saldo_rekening_awal) : 0;
+  const selisihKas = result ? (Number(result.saldo_kas_akhir!) - Number(result.saldo_kas_awal)) : 0;
+  const selisihRekening = result ? (Number(result.saldo_rekening_akhir!) - Number(result.saldo_rekening_awal)) : 0;
 
   const SelisihIcon = selisihKas > 0 ? TrendingUp : selisihKas < 0 ? TrendingDown : Minus;
 
@@ -57,11 +60,11 @@ export default function TutupTokoDialog({ open, onOpenChange, tokoData, onTutup 
             <div className="bg-muted rounded-xl p-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Saldo Kas Awal</span>
-                <span className="font-medium text-foreground">{formatRupiah(result.saldo_kas_awal)}</span>
+                <span className="font-medium text-foreground">{formatRupiah(Number(result.saldo_kas_awal))}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Saldo Kas Akhir</span>
-                <span className="font-medium text-foreground">{formatRupiah(result.saldo_kas_akhir!)}</span>
+                <span className="font-medium text-foreground">{formatRupiah(Number(result.saldo_kas_akhir!))}</span>
               </div>
               <div className="border-t border-border pt-2 flex justify-between">
                 <span className="text-muted-foreground flex items-center gap-1">
@@ -75,11 +78,11 @@ export default function TutupTokoDialog({ open, onOpenChange, tokoData, onTutup 
             <div className="bg-muted rounded-xl p-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Saldo Rekening Awal</span>
-                <span className="font-medium text-foreground">{formatRupiah(result.saldo_rekening_awal)}</span>
+                <span className="font-medium text-foreground">{formatRupiah(Number(result.saldo_rekening_awal))}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Saldo Rekening Akhir</span>
-                <span className="font-medium text-foreground">{formatRupiah(result.saldo_rekening_akhir!)}</span>
+                <span className="font-medium text-foreground">{formatRupiah(Number(result.saldo_rekening_akhir!))}</span>
               </div>
               <div className="border-t border-border pt-2 flex justify-between">
                 <span className="text-muted-foreground">Selisih Rekening</span>
@@ -128,7 +131,9 @@ export default function TutupTokoDialog({ open, onOpenChange, tokoData, onTutup 
         </div>
         <div className="flex gap-2 mt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 h-11 rounded-xl">Batal</Button>
-          <Button onClick={handleTutup} className="flex-1 h-11 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90">Tutup Toko</Button>
+          <Button onClick={handleTutup} disabled={loading} className="flex-1 h-11 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {loading ? 'Memproses...' : 'Tutup Toko'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

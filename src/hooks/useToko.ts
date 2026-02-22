@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface BukaToko {
   id: string;
@@ -19,73 +20,74 @@ function getTodayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function getAll(): BukaToko[] {
-  try {
-    return JSON.parse(localStorage.getItem('buka_toko') || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveAll(data: BukaToko[]) {
-  localStorage.setItem('buka_toko', JSON.stringify(data));
-}
-
 export function useToko() {
   const [tokoHariIni, setTokoHariIni] = useState<BukaToko | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    const today = getTodayStr();
-    const all = getAll();
-    const found = all.find((t) => t.tanggal === today) || null;
-    setTokoHariIni(found);
+  const refresh = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
+    const { data } = await supabase
+      .from('buka_toko')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('tanggal', getTodayStr())
+      .maybeSingle();
+
+    setTokoHariIni(data as BukaToko | null);
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  const bukaToko = useCallback((saldo_kas_awal: number, saldo_rekening_awal: number, catatan?: string) => {
-    const today = getTodayStr();
-    const all = getAll();
-    if (all.find((t) => t.tanggal === today)) return false;
+  const bukaToko = useCallback(async (saldo_kas_awal: number, saldo_rekening_awal: number, catatan?: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
 
-    const entry: BukaToko = {
-      id: crypto.randomUUID(),
-      user_id: 'agent-1',
-      tanggal: today,
-      saldo_kas_awal,
-      saldo_rekening_awal,
-      catatan,
-      waktu_buka: new Date().toISOString(),
-      status: 'OPEN',
-    };
-    all.push(entry);
-    saveAll(all);
-    setTokoHariIni(entry);
+    const { data, error } = await supabase
+      .from('buka_toko')
+      .insert({
+        user_id: user.id,
+        tanggal: getTodayStr(),
+        saldo_kas_awal,
+        saldo_rekening_awal,
+        catatan,
+        status: 'OPEN',
+      })
+      .select()
+      .single();
+
+    if (error) { console.error(error); return false; }
+    setTokoHariIni(data as BukaToko);
     return true;
   }, []);
 
-  const tutupToko = useCallback((saldo_kas_akhir: number, saldo_rekening_akhir: number) => {
-    const today = getTodayStr();
-    const all = getAll();
-    const idx = all.findIndex((t) => t.tanggal === today && t.status === 'OPEN');
-    if (idx === -1) return null;
+  const tutupToko = useCallback(async (saldo_kas_akhir: number, saldo_rekening_akhir: number) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
 
-    const entry = all[idx];
-    entry.status = 'CLOSED';
-    entry.waktu_tutup = new Date().toISOString();
-    entry.saldo_kas_akhir = saldo_kas_akhir;
-    entry.saldo_rekening_akhir = saldo_rekening_akhir;
-    entry.selisih_kas = saldo_kas_akhir - entry.saldo_kas_awal;
+    const selisih_kas = tokoHariIni ? saldo_kas_akhir - tokoHariIni.saldo_kas_awal : 0;
 
-    all[idx] = entry;
-    saveAll(all);
-    setTokoHariIni(entry);
-    return entry;
-  }, []);
+    const { data, error } = await supabase
+      .from('buka_toko')
+      .update({
+        status: 'CLOSED',
+        waktu_tutup: new Date().toISOString(),
+        saldo_kas_akhir,
+        saldo_rekening_akhir,
+        selisih_kas,
+      })
+      .eq('user_id', user.id)
+      .eq('tanggal', getTodayStr())
+      .eq('status', 'OPEN')
+      .select()
+      .single();
+
+    if (error) { console.error(error); return null; }
+    setTokoHariIni(data as BukaToko);
+    return data as BukaToko;
+  }, [tokoHariIni]);
 
   return { tokoHariIni, loading, bukaToko, tutupToko, refresh };
 }

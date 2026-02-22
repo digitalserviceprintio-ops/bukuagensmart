@@ -1,5 +1,8 @@
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { User, Shield, LogOut, FileText, HelpCircle, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const menuItems = [
   { icon: Shield, label: 'Keamanan & PIN', desc: 'Ubah PIN transaksi' },
@@ -9,11 +12,24 @@ const menuItems = [
 
 export default function Profil() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [profile, setProfile] = useState<{ name: string; phone: string } | null>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('agent_logged_in');
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('name, phone').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => {
+        if (data) setProfile(data as any);
+      });
+  }, [user]);
+
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
+
+  const displayName = profile?.name || user?.user_metadata?.name || 'Agen';
+  const displayPhone = profile?.phone || user?.user_metadata?.phone || '';
 
   return (
     <div className="pb-20 min-h-screen px-5 pt-6">
@@ -23,8 +39,8 @@ export default function Profil() {
           <User className="h-7 w-7 text-primary-foreground" />
         </div>
         <div>
-          <h2 className="text-base font-bold text-foreground">Budi Santoso</h2>
-          <p className="text-sm text-muted-foreground">0812-3456-7890</p>
+          <h2 className="text-base font-bold text-foreground">{displayName}</h2>
+          <p className="text-sm text-muted-foreground">{displayPhone}</p>
           <span className="inline-block mt-1 px-2 py-0.5 bg-secondary/10 text-secondary text-[10px] font-semibold rounded-full">Agen Aktif</span>
         </div>
       </div>
@@ -46,10 +62,7 @@ export default function Profil() {
       </div>
 
       {/* Logout */}
-      <button
-        onClick={handleLogout}
-        className="w-full mt-6 bg-destructive/10 rounded-xl p-4 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-      >
+      <button onClick={handleLogout} className="w-full mt-6 bg-destructive/10 rounded-xl p-4 flex items-center justify-center gap-2 active:scale-95 transition-transform">
         <LogOut className="h-5 w-5 text-destructive" />
         <span className="text-sm font-semibold text-destructive">Keluar</span>
       </button>

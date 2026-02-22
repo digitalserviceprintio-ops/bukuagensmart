@@ -1,23 +1,41 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Shield, Smartphone, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, Smartphone } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
+  const [isRegister, setIsRegister] = useState(false);
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const { login, register } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || pin.length < 4) {
-      setError('Masukkan nomor HP dan PIN yang valid');
+    setError('');
+    if (!phone || pin.length < 6) {
+      setError('Masukkan nomor HP dan PIN minimal 6 digit');
       return;
     }
-    localStorage.setItem('agent_logged_in', 'true');
-    navigate('/');
+    if (isRegister && !name) {
+      setError('Masukkan nama lengkap');
+      return;
+    }
+    setLoading(true);
+    try {
+      if (isRegister) {
+        await register(phone, pin, name);
+      } else {
+        await login(phone, pin);
+      }
+    } catch (err: any) {
+      setError(err.message === 'Invalid login credentials' ? 'Nomor HP atau PIN salah' : err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,40 +50,37 @@ export default function Login() {
         </div>
 
         <div className="bg-card rounded-2xl p-6 shadow-card">
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {isRegister && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Nama Lengkap</label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Nama lengkap" value={name} onChange={(e) => { setName(e.target.value); setError(''); }} className="pl-10 h-12 text-base" />
+                </div>
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Nomor HP</label>
               <div className="relative">
                 <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="tel"
-                  placeholder="08xxxxxxxxxx"
-                  value={phone}
-                  onChange={(e) => { setPhone(e.target.value); setError(''); }}
-                  className="pl-10 h-12 text-base"
-                  maxLength={15}
-                />
+                <Input type="tel" placeholder="08xxxxxxxxxx" value={phone} onChange={(e) => { setPhone(e.target.value); setError(''); }} className="pl-10 h-12 text-base" maxLength={15} />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">PIN</label>
-              <Input
-                type="password"
-                placeholder="••••••"
-                value={pin}
-                onChange={(e) => { setPin(e.target.value.replace(/\D/g, '')); setError(''); }}
-                className="h-12 text-center text-xl tracking-[0.5em]"
-                maxLength={6}
-              />
+              <label className="text-sm font-medium text-foreground mb-1.5 block">PIN (min 6 digit)</label>
+              <Input type="password" placeholder="••••••" value={pin} onChange={(e) => { setPin(e.target.value.replace(/\D/g, '')); setError(''); }} className="h-12 text-center text-xl tracking-[0.5em]" maxLength={6} />
             </div>
             {error && <p className="text-destructive text-sm text-center">{error}</p>}
-            <Button type="submit" className="w-full h-12 text-base font-semibold gradient-primary shadow-button">
-              Masuk
+            <Button type="submit" disabled={loading} className="w-full h-12 text-base font-semibold gradient-primary shadow-button disabled:opacity-50">
+              {loading ? 'Memproses...' : isRegister ? 'Daftar' : 'Masuk'}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Belum punya akun?{' '}
-            <button className="text-secondary font-semibold">Daftar</button>
+            {isRegister ? 'Sudah punya akun?' : 'Belum punya akun?'}{' '}
+            <button onClick={() => { setIsRegister(!isRegister); setError(''); }} className="text-secondary font-semibold">
+              {isRegister ? 'Masuk' : 'Daftar'}
+            </button>
           </p>
         </div>
       </div>
