@@ -3,6 +3,7 @@ import { Shield, Smartphone, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
+import { Navigate } from 'react-router-dom';
 
 export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
@@ -10,8 +11,13 @@ export default function Login() {
   const [pin, setPin] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { user, loading, login, register } = useAuth();
+
+  // Redirect if already authenticated
+  if (!loading && user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +30,7 @@ export default function Login() {
       setError('Masukkan nama lengkap');
       return;
     }
-    setLoading(true);
+    setSubmitting(true);
     try {
       if (isRegister) {
         await register(phone, pin, name);
@@ -34,7 +40,7 @@ export default function Login() {
     } catch (err: any) {
       setError(err.message === 'Invalid login credentials' ? 'Nomor HP atau PIN salah' : err.message);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -72,8 +78,8 @@ export default function Login() {
               <Input type="password" placeholder="••••••" value={pin} onChange={(e) => { setPin(e.target.value.replace(/\D/g, '')); setError(''); }} className="h-12 text-center text-xl tracking-[0.5em]" maxLength={6} />
             </div>
             {error && <p className="text-destructive text-sm text-center">{error}</p>}
-            <Button type="submit" disabled={loading} className="w-full h-12 text-base font-semibold gradient-primary shadow-button disabled:opacity-50">
-              {loading ? 'Memproses...' : isRegister ? 'Daftar' : 'Masuk'}
+            <Button type="submit" disabled={submitting} className="w-full h-12 text-base font-semibold gradient-primary shadow-button disabled:opacity-50">
+              {submitting ? 'Memproses...' : isRegister ? 'Daftar' : 'Masuk'}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground mt-4">
