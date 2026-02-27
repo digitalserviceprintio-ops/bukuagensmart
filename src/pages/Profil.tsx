@@ -1,4 +1,4 @@
-import { User, Shield, LogOut, FileText, HelpCircle, ChevronRight, Store, Calculator, Trash2, Info, Settings } from 'lucide-react';
+import { User, Shield, LogOut, FileText, HelpCircle, ChevronRight, Store, Calculator, Trash2, Info, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -61,7 +61,25 @@ export default function Profil() {
         ))}
       </div>
 
-      <button onClick={handleLogout} className="w-full mt-6 bg-destructive/10 rounded-xl p-4 flex items-center justify-center gap-2 active:scale-95 transition-transform">
+      <button
+        onClick={() => {
+          document.documentElement.classList.toggle('dark');
+          localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }}
+        className="w-full mt-4 bg-card rounded-xl p-4 flex items-center gap-3 shadow-card"
+      >
+        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+          <Moon className="h-5 w-5 text-foreground dark:hidden" />
+          <Sun className="h-5 w-5 text-foreground hidden dark:block" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-foreground">Mode Gelap</p>
+          <p className="text-[10px] text-muted-foreground">Aktifkan/nonaktifkan tema gelap</p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </button>
+
+      <button onClick={handleLogout} className="w-full mt-4 bg-destructive/10 rounded-xl p-4 flex items-center justify-center gap-2 active:scale-95 transition-transform">
         <LogOut className="h-5 w-5 text-destructive" />
         <span className="text-sm font-semibold text-destructive">Keluar</span>
       </button>
