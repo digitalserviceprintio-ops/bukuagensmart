@@ -32,8 +32,8 @@ export default function Bantuan() {
       <h2 className="text-sm font-semibold text-foreground mb-3">Hubungi Kami</h2>
       <div className="space-y-2">
         {[
-          { icon: MessageCircle, label: 'WhatsApp', value: '0812-xxxx-xxxx', href: 'https://wa.me/62812xxxxxxxx' },
-          { icon: Mail, label: 'Email', value: 'support@bukuagen.app', href: 'mailto:support@bukuagen.app' },
+          { icon: MessageCircle, label: 'WhatsApp', value: '0821-8637-1356', href: 'https://wa.me/6282186371356' },
+          { icon: Mail, label: 'Email', value: 'rayyan.abdi19@gmail.com', href: 'mailto:rayyan.abdi19@gmail.com' },
         ].map((c) => (
           <a key={c.label} href={c.href} target="_blank" rel="noopener" className="bg-card rounded-xl p-4 flex items-center gap-3 shadow-card">
             <c.icon className="h-5 w-5 text-secondary" />

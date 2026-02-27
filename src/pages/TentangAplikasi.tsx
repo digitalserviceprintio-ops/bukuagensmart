@@ -25,7 +25,7 @@ export default function TentangAplikasi() {
           Struk Digital PDF, dan Backup Data.
         </p>
         <div className="border-t border-border pt-3 space-y-1">
-          <p className="text-xs text-muted-foreground">Dikembangkan dengan ❤️ oleh Tim Buku Agen</p>
+          <p className="text-xs text-muted-foreground">Dikembangkan dengan ❤️ oleh <strong className="text-foreground">Andriawan Delv</strong></p>
           <p className="text-xs text-muted-foreground">© 2026 Buku Agen. Semua hak dilindungi.</p>
         </div>
       </div>
