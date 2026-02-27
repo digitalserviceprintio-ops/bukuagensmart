@@ -6,13 +6,19 @@ import { useToko } from '@/hooks/useToko';
 import { supabase } from '@/integrations/supabase/client';
 import BukaTokoModal from '@/components/BukaTokoModal';
 import TutupTokoDialog from '@/components/TutupTokoDialog';
+import PromoCarousel from '@/components/PromoCarousel';
+import ReceiptButton from '@/components/ReceiptGenerator';
 
 interface TxRow {
   id: string;
   type: string;
   amount: number;
+  fee: number;
+  commission: number;
   customer_name: string;
+  customer_phone: string;
   created_at: string;
+  status: string;
 }
 
 export default function Dashboard() {
@@ -143,6 +149,12 @@ export default function Dashboard() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Promo Carousel */}
+      <div className="px-5 mt-6">
+        <h2 className="text-sm font-semibold text-foreground mb-3">Promo & Info</h2>
+        <PromoCarousel />
       </div>
 
       {/* Recent Transactions */}
