@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react';
-import { User, Shield, LogOut, FileText, HelpCircle, ChevronRight } from 'lucide-react';
+import { User, Shield, LogOut, FileText, HelpCircle, ChevronRight, Store, Calculator, Trash2, Info, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const menuItems = [
-  { icon: Shield, label: 'Keamanan & PIN', desc: 'Ubah PIN transaksi' },
-  { icon: FileText, label: 'Riwayat Aktivitas', desc: 'Log aktivitas akun' },
-  { icon: HelpCircle, label: 'Bantuan', desc: 'Pusat bantuan' },
+  { icon: Store, label: 'Atur Profil Toko', desc: 'Info nama & alamat toko', path: '/profil/toko' },
+  { icon: Shield, label: 'Keamanan & PIN', desc: 'Ubah PIN transaksi', path: '/profil/keamanan' },
+  { icon: Calculator, label: 'Atur Biaya Admin', desc: 'Biaya per kelipatan nominal', path: '/profil/biaya-admin' },
+  { icon: FileText, label: 'Riwayat Aktivitas', desc: 'Log aktivitas & struk', path: '/profil/riwayat' },
+  { icon: HelpCircle, label: 'Bantuan', desc: 'Pusat bantuan & FAQ', path: '/profil/bantuan' },
+  { icon: Info, label: 'Tentang Aplikasi', desc: 'Versi & informasi', path: '/profil/tentang' },
+  { icon: Trash2, label: 'Reset Data', desc: 'Hapus data transaksi', path: '/profil/reset' },
 ];
 
 export default function Profil() {
@@ -18,9 +22,7 @@ export default function Profil() {
   useEffect(() => {
     if (!user) return;
     supabase.from('profiles').select('name, phone').eq('user_id', user.id).maybeSingle()
-      .then(({ data }) => {
-        if (data) setProfile(data as any);
-      });
+      .then(({ data }) => { if (data) setProfile(data as any); });
   }, [user]);
 
   const handleLogout = async () => {
@@ -33,7 +35,6 @@ export default function Profil() {
 
   return (
     <div className="pb-20 min-h-screen px-5 pt-6">
-      {/* Profile Header */}
       <div className="bg-card rounded-2xl p-5 shadow-card flex items-center gap-4 mb-6">
         <div className="w-14 h-14 rounded-full gradient-primary flex items-center justify-center">
           <User className="h-7 w-7 text-primary-foreground" />
@@ -45,10 +46,9 @@ export default function Profil() {
         </div>
       </div>
 
-      {/* Menu */}
       <div className="space-y-2">
         {menuItems.map((item) => (
-          <button key={item.label} className="w-full bg-card rounded-xl p-4 flex items-center gap-3 shadow-card text-left">
+          <button key={item.label} onClick={() => navigate(item.path)} className="w-full bg-card rounded-xl p-4 flex items-center gap-3 shadow-card text-left">
             <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
               <item.icon className="h-5 w-5 text-foreground" />
             </div>
@@ -61,7 +61,6 @@ export default function Profil() {
         ))}
       </div>
 
-      {/* Logout */}
       <button onClick={handleLogout} className="w-full mt-6 bg-destructive/10 rounded-xl p-4 flex items-center justify-center gap-2 active:scale-95 transition-transform">
         <LogOut className="h-5 w-5 text-destructive" />
         <span className="text-sm font-semibold text-destructive">Keluar</span>

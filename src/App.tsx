@@ -10,6 +10,13 @@ import Transaksi from "./pages/Transaksi";
 import BukuKas from "./pages/BukuKas";
 import Laporan from "./pages/Laporan";
 import Profil from "./pages/Profil";
+import KeamananPin from "./pages/KeamananPin";
+import RiwayatAktivitas from "./pages/RiwayatAktivitas";
+import Bantuan from "./pages/Bantuan";
+import TentangAplikasi from "./pages/TentangAplikasi";
+import AturBiayaAdmin from "./pages/AturBiayaAdmin";
+import ResetData from "./pages/ResetData";
+import AturProfilToko from "./pages/AturProfilToko";
 import BottomNav from "./components/BottomNav";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +51,13 @@ const App = () => (
           <Route path="/buku-kas" element={<ProtectedRoute><BukuKas /></ProtectedRoute>} />
           <Route path="/laporan" element={<ProtectedRoute><Laporan /></ProtectedRoute>} />
           <Route path="/profil" element={<ProtectedRoute><Profil /></ProtectedRoute>} />
+          <Route path="/profil/keamanan" element={<ProtectedRoute><KeamananPin /></ProtectedRoute>} />
+          <Route path="/profil/riwayat" element={<ProtectedRoute><RiwayatAktivitas /></ProtectedRoute>} />
+          <Route path="/profil/bantuan" element={<ProtectedRoute><Bantuan /></ProtectedRoute>} />
+          <Route path="/profil/tentang" element={<ProtectedRoute><TentangAplikasi /></ProtectedRoute>} />
+          <Route path="/profil/biaya-admin" element={<ProtectedRoute><AturBiayaAdmin /></ProtectedRoute>} />
+          <Route path="/profil/reset" element={<ProtectedRoute><ResetData /></ProtectedRoute>} />
+          <Route path="/profil/toko" element={<ProtectedRoute><AturProfilToko /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
