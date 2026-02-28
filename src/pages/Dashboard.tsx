@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store } from 'lucide-react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store, ShoppingBag } from 'lucide-react';
 import { formatRupiah } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { useToko } from '@/hooks/useToko';
@@ -137,15 +137,16 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="px-5 mt-6">
         <h2 className="text-sm font-semibold text-foreground mb-3">Aksi Cepat</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           {[
-            { label: 'Tarik Tunai', icon: ArrowDownLeft, gradient: 'gradient-primary' },
-            { label: 'Setor Tunai', icon: ArrowUpRight, gradient: 'gradient-success' },
-            { label: 'Transfer', icon: Wallet, gradient: 'gradient-primary' },
+            { label: 'Tarik Tunai', icon: ArrowDownLeft, gradient: 'gradient-primary', path: '/transaksi' },
+            { label: 'Setor Tunai', icon: ArrowUpRight, gradient: 'gradient-success', path: '/transaksi' },
+            { label: 'Transfer', icon: Wallet, gradient: 'gradient-primary', path: '/transaksi' },
+            { label: 'Toko', icon: ShoppingBag, gradient: 'gradient-success', path: '/toko' },
           ].map((action) => (
-            <button key={action.label} onClick={() => navigate('/transaksi')} className={`${action.gradient} rounded-xl p-4 flex flex-col items-center gap-2 shadow-button active:scale-95 transition-transform`}>
-              <action.icon className="h-6 w-6 text-primary-foreground" />
-              <span className="text-xs font-semibold text-primary-foreground">{action.label}</span>
+            <button key={action.label} onClick={() => navigate(action.path)} className={`${action.gradient} rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-button active:scale-95 transition-transform`}>
+              <action.icon className="h-5 w-5 text-primary-foreground" />
+              <span className="text-[10px] font-semibold text-primary-foreground">{action.label}</span>
             </button>
           ))}
         </div>

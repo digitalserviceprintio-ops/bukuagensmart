@@ -19,6 +19,11 @@ import ResetData from "./pages/ResetData";
 import AturProfilToko from "./pages/AturProfilToko";
 import BottomNav from "./components/BottomNav";
 import NotFound from "./pages/NotFound";
+import TokoDashboard from "./pages/toko/TokoDashboard";
+import ManajemenProduk from "./pages/toko/ManajemenProduk";
+import KasirPOS from "./pages/toko/KasirPOS";
+import ManajemenStok from "./pages/toko/ManajemenStok";
+import LaporanToko from "./pages/toko/LaporanToko";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +63,11 @@ const App = () => (
           <Route path="/profil/biaya-admin" element={<ProtectedRoute><AturBiayaAdmin /></ProtectedRoute>} />
           <Route path="/profil/reset" element={<ProtectedRoute><ResetData /></ProtectedRoute>} />
           <Route path="/profil/toko" element={<ProtectedRoute><AturProfilToko /></ProtectedRoute>} />
+          <Route path="/toko" element={<ProtectedRoute><TokoDashboard /></ProtectedRoute>} />
+          <Route path="/toko/produk" element={<ProtectedRoute><ManajemenProduk /></ProtectedRoute>} />
+          <Route path="/toko/kasir" element={<ProtectedRoute><KasirPOS /></ProtectedRoute>} />
+          <Route path="/toko/stok" element={<ProtectedRoute><ManajemenStok /></ProtectedRoute>} />
+          <Route path="/toko/laporan" element={<ProtectedRoute><LaporanToko /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
