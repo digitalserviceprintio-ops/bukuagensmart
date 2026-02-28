@@ -1,0 +1,320 @@
+import { useState, useCallback } from 'react';
+import { ArrowLeft, ScanLine, Plus, Minus, Trash2, ShoppingCart, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useProducts, Product } from '@/hooks/useProducts';
+import { supabase } from '@/integrations/supabase/client';
+import { formatRupiah } from '@/data/mockData';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import BarcodeScanner from '@/components/BarcodeScanner';
+import { toast } from 'sonner';
+import jsPDF from 'jspdf';
+
+interface CartItem {
+  product: Product;
+  qty: number;
+  subtotal: number;
+}
+
+export default function KasirPOS() {
+  const navigate = useNavigate();
+  const { products, findByBarcode, refresh } = useProducts();
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [scanning, setScanning] = useState(false);
+  const [search, setSearch] = useState('');
+  const [discount, setDiscount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const total = cart.reduce((s, i) => s + i.subtotal, 0);
+  const grandTotal = Math.max(0, total - discount);
+
+  const addToCart = useCallback((product: Product) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.product.id === product.id);
+      if (existing) {
+        if (existing.qty >= product.stock) {
+          toast.error('Stok tidak cukup');
+          return prev;
+        }
+        return prev.map(i =>
+          i.product.id === product.id
+            ? { ...i, qty: i.qty + 1, subtotal: (i.qty + 1) * product.sell_price }
+            : i
+        );
+      }
+      if (product.stock <= 0) {
+        toast.error('Stok habis');
+        return prev;
+      }
+      return [...prev, { product, qty: 1, subtotal: product.sell_price }];
+    });
+  }, []);
+
+  const updateQty = (productId: string, delta: number) => {
+    setCart(prev => prev.map(i => {
+      if (i.product.id !== productId) return i;
+      const newQty = i.qty + delta;
+      if (newQty <= 0) return i;
+      if (newQty > i.product.stock) { toast.error('Stok tidak cukup'); return i; }
+      return { ...i, qty: newQty, subtotal: newQty * i.product.sell_price };
+    }));
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(i => i.product.id !== productId));
+  };
+
+  const handleBarcodeScan = async (code: string) => {
+    setScanning(false);
+    const product = await findByBarcode(code);
+    if (product) {
+      addToCart(product);
+      toast.success(`${product.name} ditambahkan`);
+    } else {
+      toast.error('Produk tidak ditemukan');
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Create POS transaction
+    const { data: txData, error: txError } = await supabase
+      .from('pos_transactions' as any)
+      .insert({
+        user_id: user.id,
+        total,
+        discount,
+        grand_total: grandTotal,
+        payment_method: paymentMethod,
+      } as any)
+      .select()
+      .single();
+
+    if (txError || !txData) { toast.error('Gagal menyimpan transaksi'); console.error(txError); return; }
+
+    const txId = (txData as any).id;
+
+    // Insert items
+    const items = cart.map(i => ({
+      pos_transaction_id: txId,
+      product_id: i.product.id,
+      product_name: i.product.name,
+      qty: i.qty,
+      price: i.product.sell_price,
+      subtotal: i.subtotal,
+    }));
+
+    await supabase.from('pos_transaction_items' as any).insert(items as any);
+
+    // Update stock & record history
+    for (const item of cart) {
+      const newStock = item.product.stock - item.qty;
+      await supabase.from('products' as any).update({ stock: newStock } as any).eq('id', item.product.id);
+      await supabase.from('stock_history' as any).insert({
+        user_id: user.id,
+        product_id: item.product.id,
+        product_name: item.product.name,
+        type: 'out',
+        qty: item.qty,
+        note: `Penjualan POS #${txId.slice(0, 8)}`,
+      } as any);
+    }
+
+    // Generate receipt PDF
+    generateReceipt(txId, cart, discount, grandTotal, paymentMethod);
+
+    toast.success('Transaksi berhasil!');
+    setCart([]);
+    setDiscount(0);
+    setCheckoutOpen(false);
+    refresh();
+  };
+
+  const generateReceipt = (txId: string, items: CartItem[], disc: number, gt: number, method: string) => {
+    const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('STRUK PENJUALAN', 40, 8, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`No: ${txId.slice(0, 8)}`, 40, 13, { align: 'center' });
+    doc.text(new Date().toLocaleString('id-ID'), 40, 17, { align: 'center' });
+    doc.line(4, 20, 76, 20);
+
+    let y = 24;
+    items.forEach(i => {
+      doc.text(i.product.name, 4, y);
+      doc.text(`${i.qty}x ${formatRupiah(i.product.sell_price)}`, 76, y, { align: 'right' });
+      y += 4;
+      doc.text(formatRupiah(i.subtotal), 76, y, { align: 'right' });
+      y += 5;
+    });
+
+    doc.line(4, y, 76, y);
+    y += 4;
+    doc.text('Subtotal:', 4, y);
+    doc.text(formatRupiah(items.reduce((s, i) => s + i.subtotal, 0)), 76, y, { align: 'right' });
+    if (disc > 0) {
+      y += 4;
+      doc.text('Diskon:', 4, y);
+      doc.text(`-${formatRupiah(disc)}`, 76, y, { align: 'right' });
+    }
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL:', 4, y);
+    doc.text(formatRupiah(gt), 76, y, { align: 'right' });
+    y += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Bayar: ${method.toUpperCase()}`, 4, y);
+    y += 6;
+    doc.text('Terima kasih!', 40, y, { align: 'center' });
+
+    doc.save(`struk-pos-${txId.slice(0, 8)}.pdf`);
+  };
+
+  const searchResults = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) || p.barcode.includes(search)
+  ).slice(0, 10);
+
+  return (
+    <div className="pb-20 min-h-screen px-5 pt-6">
+      <div className="flex items-center gap-3 mb-4">
+        <button onClick={() => navigate('/toko')} className="p-2 rounded-xl bg-muted">
+          <ArrowLeft className="h-5 w-5 text-foreground" />
+        </button>
+        <h1 className="text-lg font-bold text-foreground">Kasir POS</h1>
+      </div>
+
+      {/* Scan & Search */}
+      <div className="flex gap-2 mb-4">
+        <Button onClick={() => setScanning(true)} className="flex-1 gap-2 gradient-primary text-primary-foreground">
+          <ScanLine className="h-4 w-4" /> Scan Barcode
+        </Button>
+        <Button variant="outline" onClick={() => setSearchOpen(true)} className="flex-1 gap-2">
+          <Search className="h-4 w-4" /> Cari Produk
+        </Button>
+      </div>
+
+      {/* Cart */}
+      {cart.length === 0 ? (
+        <div className="text-center py-12">
+          <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Keranjang kosong</p>
+          <p className="text-xs text-muted-foreground">Scan barcode atau cari produk</p>
+        </div>
+      ) : (
+        <div className="space-y-2 mb-4">
+          {cart.map(item => (
+            <div key={item.product.id} className="bg-card rounded-xl p-3 shadow-card flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{item.product.name}</p>
+                <p className="text-[10px] text-muted-foreground">@ {formatRupiah(item.product.sell_price)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(item.product.id, -1)}>
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <span className="text-sm font-bold w-6 text-center">{item.qty}</span>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(item.product.id, 1)}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+              <p className="text-sm font-bold text-foreground w-20 text-right">{formatRupiah(item.subtotal)}</p>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeFromCart(item.product.id)}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Checkout Bar */}
+      {cart.length > 0 && (
+        <div className="fixed bottom-16 left-0 right-0 z-40 px-4">
+          <div className="max-w-lg mx-auto bg-card rounded-xl shadow-lg border border-border p-4">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Total ({cart.reduce((s, i) => s + i.qty, 0)} item)</span>
+              <span className="text-base font-bold text-foreground">{formatRupiah(total)}</span>
+            </div>
+            <Button onClick={() => setCheckoutOpen(true)} className="w-full gap-2 gradient-success text-secondary-foreground">
+              <ShoppingCart className="h-4 w-4" /> Bayar {formatRupiah(grandTotal)}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Dialog */}
+      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Checkout</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm">Subtotal</span>
+              <span className="text-sm font-bold">{formatRupiah(total)}</span>
+            </div>
+            <div>
+              <label className="text-xs font-medium">Diskon (Rp)</label>
+              <Input type="number" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} />
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-bold">Grand Total</span>
+              <span className="text-lg font-bold text-secondary">{formatRupiah(grandTotal)}</span>
+            </div>
+            <div>
+              <label className="text-xs font-medium">Metode Pembayaran</label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="qris">QRIS</SelectItem>
+                  <SelectItem value="transfer">Transfer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleCheckout} className="w-full gradient-success text-secondary-foreground">
+              Proses & Cetak Struk
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Search Dialog */}
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cari Produk</DialogTitle>
+          </DialogHeader>
+          <Input placeholder="Nama atau barcode..." value={search} onChange={e => setSearch(e.target.value)} autoFocus />
+          <div className="max-h-60 overflow-y-auto space-y-1">
+            {searchResults.map(p => (
+              <button key={p.id} onClick={() => { addToCart(p); setSearchOpen(false); setSearch(''); toast.success(`${p.name} ditambahkan`); }}
+                className="w-full text-left p-2 rounded-lg hover:bg-muted flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium">{p.name}</p>
+                  <p className="text-[10px] text-muted-foreground">Stok: {p.stock}</p>
+                </div>
+                <p className="text-sm font-bold text-secondary">{formatRupiah(p.sell_price)}</p>
+              </button>
+            ))}
+            {searchResults.length === 0 && search && (
+              <p className="text-center text-sm text-muted-foreground py-4">Tidak ditemukan</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Barcode Scanner */}
+      {scanning && <BarcodeScanner onDetected={handleBarcodeScan} onClose={() => setScanning(false)} />}
+    </div>
+  );
+}
