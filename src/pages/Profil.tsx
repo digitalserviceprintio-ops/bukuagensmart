@@ -1,13 +1,15 @@
-import { User, Shield, LogOut, FileText, HelpCircle, ChevronRight, Store, Calculator, Trash2, Info, Moon, Sun } from 'lucide-react';
+import { User, Shield, LogOut, FileText, HelpCircle, ChevronRight, Store, Calculator, Trash2, Info, Moon, Sun, Crown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useLicense } from '@/hooks/useLicense';
 
 const menuItems = [
   { icon: Store, label: 'Atur Profil Toko', desc: 'Info nama & alamat toko', path: '/profil/toko' },
   { icon: Shield, label: 'Keamanan & PIN', desc: 'Ubah PIN transaksi', path: '/profil/keamanan' },
   { icon: Calculator, label: 'Atur Biaya Admin', desc: 'Biaya per kelipatan nominal', path: '/profil/biaya-admin' },
+  { icon: Crown, label: 'Lisensi', desc: 'Status langganan & upgrade', path: '/profil/lisensi' },
   { icon: FileText, label: 'Riwayat Aktivitas', desc: 'Log aktivitas & struk', path: '/profil/riwayat' },
   { icon: HelpCircle, label: 'Bantuan', desc: 'Pusat bantuan & FAQ', path: '/profil/bantuan' },
   { icon: Info, label: 'Tentang Aplikasi', desc: 'Versi & informasi', path: '/profil/tentang' },
@@ -18,6 +20,7 @@ export default function Profil() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState<{ name: string; phone: string } | null>(null);
+  const { isPremium, isTrial, daysLeft } = useLicense();
 
   useEffect(() => {
     if (!user) return;
@@ -35,15 +38,33 @@ export default function Profil() {
 
   return (
     <div className="pb-20 min-h-screen px-5 pt-6">
-      <div className="bg-card rounded-2xl p-5 shadow-card flex items-center gap-4 mb-6">
+      <div className="bg-card rounded-2xl p-5 shadow-card flex items-center gap-4 mb-4">
         <div className="w-14 h-14 rounded-full gradient-primary flex items-center justify-center">
           <User className="h-7 w-7 text-primary-foreground" />
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-base font-bold text-foreground">{displayName}</h2>
           <p className="text-sm text-muted-foreground">{displayPhone}</p>
           <span className="inline-block mt-1 px-2 py-0.5 bg-secondary/10 text-secondary text-[10px] font-semibold rounded-full">Agen Aktif</span>
         </div>
+      </div>
+
+      {/* License Badge */}
+      <div className={`rounded-xl p-3 mb-4 flex items-center gap-3 ${isPremium ? 'bg-secondary/10' : 'bg-warning/10'}`}>
+        <Crown className={`h-5 w-5 ${isPremium ? 'text-secondary' : 'text-warning'}`} />
+        <div className="flex-1">
+          <p className="text-xs font-semibold text-foreground">
+            {isPremium ? 'Premium' : 'Trial'}
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            {isPremium ? 'Fitur lengkap aktif' : daysLeft !== null ? `${daysLeft} hari tersisa` : ''}
+          </p>
+        </div>
+        {!isPremium && (
+          <button onClick={() => navigate('/profil/lisensi')} className="text-[10px] font-bold text-warning">
+            Upgrade →
+          </button>
+        )}
       </div>
 
       <div className="space-y-2">

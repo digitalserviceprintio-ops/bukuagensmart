@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { ArrowLeft, ScanLine, Plus, Minus, Trash2, ShoppingCart, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts, Product } from '@/hooks/useProducts';
+import { useTokoProfile } from '@/hooks/useTokoProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { formatRupiah } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface CartItem {
 export default function KasirPOS() {
   const navigate = useNavigate();
   const { products, findByBarcode, refresh } = useProducts();
+  const { profile: tokoProfile } = useTokoProfile();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [scanning, setScanning] = useState(false);
   const [search, setSearch] = useState('');
@@ -129,7 +131,7 @@ export default function KasirPOS() {
     }
 
     // Generate receipt PDF
-    generateReceipt(txId, cart, discount, grandTotal, paymentMethod);
+    generateReceipt(txId, cart, discount, grandTotal, paymentMethod, tokoProfile);
 
     toast.success('Transaksi berhasil!');
     setCart([]);
@@ -138,18 +140,23 @@ export default function KasirPOS() {
     refresh();
   };
 
-  const generateReceipt = (txId: string, items: CartItem[], disc: number, gt: number, method: string) => {
-    const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+  const generateReceipt = (txId: string, items: CartItem[], disc: number, gt: number, method: string, toko?: { nama: string; alamat: string; noHp: string }) => {
+    const doc = new jsPDF({ unit: 'mm', format: [80, 180] });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text('STRUK PENJUALAN', 40, 8, { align: 'center' });
+    doc.text(toko?.nama || 'STRUK PENJUALAN', 40, 8, { align: 'center' });
+    let y = 13;
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text(`No: ${txId.slice(0, 8)}`, 40, 13, { align: 'center' });
-    doc.text(new Date().toLocaleString('id-ID'), 40, 17, { align: 'center' });
-    doc.line(4, 20, 76, 20);
+    if (toko?.alamat) { doc.text(toko.alamat, 40, y, { align: 'center' }); y += 4; }
+    if (toko?.noHp) { doc.text(`HP: ${toko.noHp}`, 40, y, { align: 'center' }); y += 4; }
+    doc.text(`No: ${txId.slice(0, 8)}`, 40, y, { align: 'center' });
+    y += 4;
+    doc.text(new Date().toLocaleString('id-ID'), 40, y, { align: 'center' });
+    y += 3;
+    doc.line(4, y, 76, y);
 
-    let y = 24;
+    y += 4;
     items.forEach(i => {
       doc.text(i.product.name, 4, y);
       doc.text(`${i.qty}x ${formatRupiah(i.product.sell_price)}`, 76, y, { align: 'right' });

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store, ShoppingBag } from 'lucide-react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store, ShoppingBag, Clock } from 'lucide-react';
 import { formatRupiah } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { useToko } from '@/hooks/useToko';
+import { useTokoProfile } from '@/hooks/useTokoProfile';
 import { supabase } from '@/integrations/supabase/client';
 import BukaTokoModal from '@/components/BukaTokoModal';
 import TutupTokoDialog from '@/components/TutupTokoDialog';
 import PromoCarousel from '@/components/PromoCarousel';
-import ReceiptButton from '@/components/ReceiptGenerator';
 
 interface TxRow {
   id: string;
@@ -21,9 +21,28 @@ interface TxRow {
   status: string;
 }
 
+function DigitalClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="text-right">
+      <p className="text-xs font-mono font-bold text-primary-foreground">
+        {now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+      </p>
+      <p className="text-[9px] text-primary-foreground/60">
+        {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
+      </p>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { tokoHariIni, loading, bukaToko, tutupToko } = useToko();
+  const { profile: tokoProfile } = useTokoProfile();
   const [tutupOpen, setTutupOpen] = useState(false);
   const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [summary, setSummary] = useState({ count: 0, volume: 0, commission: 0 });
@@ -70,17 +89,28 @@ export default function Dashboard() {
   }
 
   const balance = tokoHariIni ? Number(tokoHariIni.saldo_kas_awal) + summary.volume : 0;
+  const saldoRekening = tokoHariIni ? Number(tokoHariIni.saldo_rekening_awal) : 0;
 
   return (
     <div className="pb-20 min-h-screen">
       {/* Header */}
       <div className="gradient-hero px-5 pt-6 pb-10 rounded-b-3xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-primary-foreground/70 text-sm">Selamat datang,</p>
-            <h1 className="text-lg font-bold text-primary-foreground">Agen</h1>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex-1 min-w-0">
+            {tokoProfile.nama ? (
+              <>
+                <p className="text-sm font-bold text-primary-foreground truncate">{tokoProfile.nama}</p>
+                {tokoProfile.alamat && <p className="text-[10px] text-primary-foreground/50 truncate">{tokoProfile.alamat}</p>}
+              </>
+            ) : (
+              <>
+                <p className="text-primary-foreground/70 text-sm">Selamat datang,</p>
+                <h1 className="text-lg font-bold text-primary-foreground">Agen</h1>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2">
+            <DigitalClock />
             {isOpen && (
               <span className="px-2 py-1 bg-secondary/20 text-secondary text-[10px] font-bold rounded-full flex items-center gap-1">
                 <Store className="h-3 w-3" /> BUKA
@@ -97,15 +127,26 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Balance Card */}
-        <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-5 border border-primary-foreground/10">
-          <p className="text-primary-foreground/70 text-xs font-medium mb-1">Saldo Kas Agen</p>
-          <p className="text-3xl font-bold text-primary-foreground">{formatRupiah(balance)}</p>
-          {isOpen && tokoHariIni && (
-            <p className="text-primary-foreground/50 text-[10px] mt-1">
-              Kas awal: {formatRupiah(Number(tokoHariIni.saldo_kas_awal))}
-            </p>
-          )}
+        {/* Balance Cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-4 border border-primary-foreground/10">
+            <p className="text-primary-foreground/70 text-[10px] font-medium mb-1">Saldo Kas</p>
+            <p className="text-xl font-bold text-primary-foreground">{formatRupiah(balance)}</p>
+            {isOpen && tokoHariIni && (
+              <p className="text-primary-foreground/40 text-[9px] mt-1">
+                Awal: {formatRupiah(Number(tokoHariIni.saldo_kas_awal))}
+              </p>
+            )}
+          </div>
+          <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-4 border border-primary-foreground/10">
+            <p className="text-primary-foreground/70 text-[10px] font-medium mb-1">Saldo Rekening</p>
+            <p className="text-xl font-bold text-primary-foreground">{formatRupiah(saldoRekening)}</p>
+            {isOpen && tokoHariIni && (
+              <p className="text-primary-foreground/40 text-[9px] mt-1">
+                Awal: {formatRupiah(Number(tokoHariIni.saldo_rekening_awal))}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

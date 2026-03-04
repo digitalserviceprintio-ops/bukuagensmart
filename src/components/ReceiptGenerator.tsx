@@ -15,17 +15,31 @@ interface ReceiptData {
   created_at: string;
 }
 
-export function generateReceiptPDF(tx: ReceiptData): jsPDF {
-  const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+interface TokoInfo {
+  nama?: string;
+  alamat?: string;
+  noHp?: string;
+}
+
+export function generateReceiptPDF(tx: ReceiptData, toko?: TokoInfo): jsPDF {
+  const doc = new jsPDF({ unit: 'mm', format: [80, 180] });
   const w = 80;
   let y = 8;
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('BUKU AGEN', w / 2, y, { align: 'center' });
+  doc.text(toko?.nama || 'BUKU AGEN', w / 2, y, { align: 'center' });
   y += 5;
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
+  if (toko?.alamat) {
+    doc.text(toko.alamat, w / 2, y, { align: 'center' });
+    y += 4;
+  }
+  if (toko?.noHp) {
+    doc.text(`HP: ${toko.noHp}`, w / 2, y, { align: 'center' });
+    y += 4;
+  }
   doc.text('Struk Transaksi Digital', w / 2, y, { align: 'center' });
   y += 6;
 
@@ -67,13 +81,13 @@ export function generateReceiptPDF(tx: ReceiptData): jsPDF {
   return doc;
 }
 
-export default function ReceiptButton({ tx }: { tx: ReceiptData }) {
+export default function ReceiptButton({ tx, toko }: { tx: ReceiptData; toko?: TokoInfo }) {
   const [generating, setGenerating] = useState(false);
 
   const handleDownload = () => {
     setGenerating(true);
     try {
-      const doc = generateReceiptPDF(tx);
+      const doc = generateReceiptPDF(tx, toko);
       doc.save(`struk-${tx.id.slice(0, 8)}.pdf`);
     } finally {
       setGenerating(false);
@@ -82,8 +96,9 @@ export default function ReceiptButton({ tx }: { tx: ReceiptData }) {
 
   const handleShareWhatsApp = () => {
     const typeLabels: Record<string, string> = { tarik: 'Tarik Tunai', setor: 'Setor Tunai', transfer: 'Transfer' };
+    const header = toko?.nama ? `📄 *STRUK TRANSAKSI - ${toko.nama}*` : `📄 *STRUK TRANSAKSI - BUKU AGEN*`;
     const msg = encodeURIComponent(
-      `📄 *STRUK TRANSAKSI - BUKU AGEN*\n\n` +
+      `${header}\n\n` +
       `Jenis: ${typeLabels[tx.type] || tx.type}\n` +
       `Pelanggan: ${tx.customer_name}\n` +
       `Nominal: ${formatRupiah(tx.amount)}\n` +

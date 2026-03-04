@@ -116,6 +116,126 @@ export type Database = {
         }
         Relationships: []
       }
+      pos_transaction_items: {
+        Row: {
+          id: string
+          pos_transaction_id: string
+          price: number
+          product_id: string
+          product_name: string
+          qty: number
+          subtotal: number
+        }
+        Insert: {
+          id?: string
+          pos_transaction_id: string
+          price?: number
+          product_id: string
+          product_name?: string
+          qty?: number
+          subtotal?: number
+        }
+        Update: {
+          id?: string
+          pos_transaction_id?: string
+          price?: number
+          product_id?: string
+          product_name?: string
+          qty?: number
+          subtotal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_transaction_items_pos_transaction_id_fkey"
+            columns: ["pos_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "pos_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_transaction_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_transactions: {
+        Row: {
+          created_at: string
+          discount: number
+          grand_total: number
+          id: string
+          payment_method: string
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          discount?: number
+          grand_total?: number
+          id?: string
+          payment_method?: string
+          total?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          discount?: number
+          grand_total?: number
+          id?: string
+          payment_method?: string
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          barcode: string | null
+          buy_price: number
+          category: string
+          created_at: string
+          id: string
+          min_stock: number
+          name: string
+          photo_url: string | null
+          sell_price: number
+          stock: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          barcode?: string | null
+          buy_price?: number
+          category?: string
+          created_at?: string
+          id?: string
+          min_stock?: number
+          name?: string
+          photo_url?: string | null
+          sell_price?: number
+          stock?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          barcode?: string | null
+          buy_price?: number
+          category?: string
+          created_at?: string
+          id?: string
+          min_stock?: number
+          name?: string
+          photo_url?: string | null
+          sell_price?: number
+          stock?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -142,6 +262,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      stock_history: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          product_id: string
+          product_name: string
+          qty: number
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          product_id: string
+          product_name?: string
+          qty?: number
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          product_id?: string
+          product_name?: string
+          qty?: number
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {

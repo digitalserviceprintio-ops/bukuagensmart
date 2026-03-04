@@ -4,22 +4,27 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-
-interface TokoProfile {
-  nama: string;
-  alamat: string;
-  noHp: string;
-  keterangan: string;
-}
+import { useTokoProfile } from '@/hooks/useTokoProfile';
 
 export default function AturProfilToko() {
   const navigate = useNavigate();
-  const stored = localStorage.getItem('toko_profile');
-  const [profile, setProfile] = useState<TokoProfile>(stored ? JSON.parse(stored) : { nama: '', alamat: '', noHp: '', keterangan: '' });
+  const { profile, loading, save } = useTokoProfile();
+  const [form, setForm] = useState(profile);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    localStorage.setItem('toko_profile', JSON.stringify(profile));
-    toast({ title: 'Profil toko berhasil disimpan' });
+  useEffect(() => { setForm(profile); }, [profile]);
+
+  if (loading) return null;
+
+  const handleSave = async () => {
+    setSaving(true);
+    const error = await save(form);
+    setSaving(false);
+    if (error) {
+      toast({ title: 'Gagal menyimpan', description: (error as any).message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Profil toko berhasil disimpan' });
+    }
   };
 
   return (
@@ -40,21 +45,23 @@ export default function AturProfilToko() {
       <div className="bg-card rounded-2xl p-5 shadow-card space-y-4">
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">Nama Toko</label>
-          <Input value={profile.nama} onChange={(e) => setProfile({ ...profile, nama: e.target.value })} placeholder="Nama toko/konter" className="h-12" />
+          <Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Nama toko/konter" className="h-12" />
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">Alamat</label>
-          <Input value={profile.alamat} onChange={(e) => setProfile({ ...profile, alamat: e.target.value })} placeholder="Alamat lengkap" className="h-12" />
+          <Input value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} placeholder="Alamat lengkap" className="h-12" />
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">No. HP Toko</label>
-          <Input type="tel" value={profile.noHp} onChange={(e) => setProfile({ ...profile, noHp: e.target.value })} placeholder="08xxxxxxxxxx" className="h-12" maxLength={15} />
+          <Input type="tel" value={form.noHp} onChange={(e) => setForm({ ...form, noHp: e.target.value })} placeholder="08xxxxxxxxxx" className="h-12" maxLength={15} />
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">Keterangan</label>
-          <Input value={profile.keterangan} onChange={(e) => setProfile({ ...profile, keterangan: e.target.value })} placeholder="Info tambahan (opsional)" className="h-12" />
+          <Input value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} placeholder="Info tambahan (opsional)" className="h-12" />
         </div>
-        <Button onClick={handleSave} className="w-full h-12 gradient-primary shadow-button">Simpan</Button>
+        <Button onClick={handleSave} disabled={saving} className="w-full h-12 gradient-primary shadow-button">
+          {saving ? 'Menyimpan...' : 'Simpan'}
+        </Button>
       </div>
     </div>
   );
