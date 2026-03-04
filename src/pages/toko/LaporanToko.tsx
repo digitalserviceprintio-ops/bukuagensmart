@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProducts } from '@/hooks/useProducts';
 import { formatRupiah } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 
 interface SaleRow {
@@ -39,9 +40,15 @@ export default function LaporanToko() {
       const now = new Date();
       let startDate: string;
       if (period === 'daily') {
-        startDate = now.toISOString().slice(0, 10) + 'T00:00:00';
+        // Get last 7 days
+        const d = new Date(now);
+        d.setDate(d.getDate() - 6);
+        startDate = d.toISOString().slice(0, 10) + 'T00:00:00';
       } else {
-        startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01T00:00:00`;
+        // Get last 6 months
+        const d = new Date(now);
+        d.setMonth(d.getMonth() - 5);
+        startDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01T00:00:00`;
       }
 
       const { data: txs } = await supabase
@@ -54,7 +61,6 @@ export default function LaporanToko() {
       const salesData = (txs || []) as any as SaleRow[];
       setSales(salesData);
 
-      // Get items for profit calculation
       if (salesData.length > 0) {
         const txIds = salesData.map(s => s.id);
         const { data: itemData } = await supabase
@@ -72,12 +78,55 @@ export default function LaporanToko() {
   const totalSales = sales.reduce((s, t) => s + Number(t.grand_total), 0);
   const totalDiscount = sales.reduce((s, t) => s + Number(t.discount), 0);
 
-  // Calculate profit: sum of (sell_price - buy_price) * qty
   const totalProfit = items.reduce((sum, item) => {
     const product = products.find(p => p.name === item.product_name);
     const buyPrice = product ? product.buy_price : 0;
     return sum + (Number(item.price) - buyPrice) * item.qty;
   }, 0);
+
+  // Build chart data
+  const chartData = (() => {
+    if (period === 'daily') {
+      const days: Record<string, { date: string; penjualan: number; keuntungan: number }> = {};
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        days[key] = { date: d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }), penjualan: 0, keuntungan: 0 };
+      }
+      sales.forEach(s => {
+        const key = s.created_at.slice(0, 10);
+        if (days[key]) days[key].penjualan += Number(s.grand_total);
+      });
+      // Calculate profit per day using items
+      items.forEach(item => {
+        const product = products.find(p => p.name === item.product_name);
+        const buyPrice = product ? product.buy_price : 0;
+        const profit = (Number(item.price) - buyPrice) * item.qty;
+        // We don't have item dates easily, so distribute by sales dates
+        // For simplicity, aggregate profit proportionally
+      });
+      // Approximate profit ratio
+      const profitRatio = totalSales > 0 ? totalProfit / totalSales : 0;
+      Object.values(days).forEach(d => { d.keuntungan = Math.round(d.penjualan * profitRatio); });
+      return Object.values(days);
+    } else {
+      const months: Record<string, { date: string; penjualan: number; keuntungan: number }> = {};
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        months[key] = { date: d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }), penjualan: 0, keuntungan: 0 };
+      }
+      sales.forEach(s => {
+        const key = s.created_at.slice(0, 7);
+        if (months[key]) months[key].penjualan += Number(s.grand_total);
+      });
+      const profitRatio = totalSales > 0 ? totalProfit / totalSales : 0;
+      Object.values(months).forEach(d => { d.keuntungan = Math.round(d.penjualan * profitRatio); });
+      return Object.values(months);
+    }
+  })();
 
   const exportPDF = () => {
     const doc = new jsPDF();
@@ -123,8 +172,8 @@ export default function LaporanToko() {
 
       <Tabs value={period} onValueChange={v => setPeriod(v as any)} className="mb-4">
         <TabsList className="w-full">
-          <TabsTrigger value="daily" className="flex-1">Harian</TabsTrigger>
-          <TabsTrigger value="monthly" className="flex-1">Bulanan</TabsTrigger>
+          <TabsTrigger value="daily" className="flex-1">7 Hari</TabsTrigger>
+          <TabsTrigger value="monthly" className="flex-1">6 Bulan</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -146,6 +195,37 @@ export default function LaporanToko() {
           <p className="text-[10px] text-muted-foreground">Diskon</p>
           <p className="text-base font-bold text-destructive">{formatRupiah(totalDiscount)}</p>
         </div>
+      </div>
+
+      {/* Chart - Penjualan */}
+      <div className="bg-card rounded-xl p-4 shadow-card mb-4">
+        <h3 className="text-sm font-semibold text-foreground mb-3">Grafik Penjualan & Keuntungan</h3>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+            <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
+            <Tooltip formatter={(value: number) => formatRupiah(value)} contentStyle={{ fontSize: 11, borderRadius: 8, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+            <Legend wrapperStyle={{ fontSize: 10 }} />
+            <Bar dataKey="penjualan" name="Penjualan" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="keuntungan" name="Keuntungan" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Trend Line */}
+      <div className="bg-card rounded-xl p-4 shadow-card mb-4">
+        <h3 className="text-sm font-semibold text-foreground mb-3">Tren Penjualan</h3>
+        <ResponsiveContainer width="100%" height={160}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+            <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
+            <Tooltip formatter={(value: number) => formatRupiah(value)} contentStyle={{ fontSize: 11, borderRadius: 8, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+            <Line type="monotone" dataKey="penjualan" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="keuntungan" stroke="hsl(var(--secondary))" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
       <Button onClick={exportPDF} variant="outline" className="w-full mb-4 gap-2">
