@@ -41,7 +41,7 @@ function DigitalClock() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { tokoHariIni, loading, bukaToko, tutupToko } = useToko();
+  const { tokoHariIni, loading, bukaToko, tutupToko, refresh } = useToko();
   const { profile: tokoProfile } = useTokoProfile();
   const [tutupOpen, setTutupOpen] = useState(false);
   const [transactions, setTransactions] = useState<TxRow[]>([]);
@@ -74,6 +74,10 @@ export default function Dashboard() {
       });
     };
     if (!loading) fetchData();
+
+    // Refresh saldo every 10 seconds
+    const interval = setInterval(() => { if (!loading) { fetchData(); refresh(); } }, 10000);
+    return () => clearInterval(interval);
   }, [loading]);
 
   if (loading) return null;
@@ -88,8 +92,8 @@ export default function Dashboard() {
     );
   }
 
-  const balance = tokoHariIni ? Number(tokoHariIni.saldo_kas_awal) + summary.volume : 0;
-  const saldoRekening = tokoHariIni ? Number(tokoHariIni.saldo_rekening_awal) : 0;
+  const balance = tokoHariIni ? Number(tokoHariIni.saldo_kas_awal) + (Number(tokoHariIni.selisih_kas) || 0) : 0;
+  const saldoRekening = tokoHariIni ? (Number(tokoHariIni.saldo_rekening_akhir) || Number(tokoHariIni.saldo_rekening_awal)) : 0;
 
   return (
     <div className="pb-20 min-h-screen">

@@ -130,6 +130,38 @@ export default function KasirPOS() {
       } as any);
     }
 
+    // Update saldo kas (POS sales add to kas)
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: tokoData } = await supabase
+      .from('buka_toko')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('tanggal', today)
+      .eq('status', 'OPEN')
+      .maybeSingle();
+
+    if (tokoData) {
+      const kasChange = paymentMethod === 'cash' ? grandTotal : 0;
+      const rekChange = paymentMethod !== 'cash' ? grandTotal : 0;
+
+      await supabase
+        .from('buka_toko')
+        .update({
+          selisih_kas: (Number(tokoData.selisih_kas) || 0) + kasChange,
+          saldo_rekening_akhir: (Number(tokoData.saldo_rekening_akhir) || Number(tokoData.saldo_rekening_awal)) + rekChange,
+        })
+        .eq('id', tokoData.id);
+    }
+
+    // Also record in cash_book
+    await supabase.from('cash_book').insert({
+      user_id: user.id,
+      type: 'income',
+      amount: grandTotal,
+      description: `Penjualan POS #${txId.slice(0, 8)} (${paymentMethod})`,
+      category: 'Penjualan Toko',
+    });
+
     // Generate receipt PDF
     generateReceipt(txId, cart, discount, grandTotal, paymentMethod, tokoProfile);
 
