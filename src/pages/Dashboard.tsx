@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store, ShoppingBag, Clock } from 'lucide-react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store, ShoppingBag, Clock, PlusCircle } from 'lucide-react';
 import { formatRupiah } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { useToko } from '@/hooks/useToko';
 import { useTokoProfile } from '@/hooks/useTokoProfile';
+import { useLicense } from '@/hooks/useLicense';
 import { supabase } from '@/integrations/supabase/client';
 import BukaTokoModal from '@/components/BukaTokoModal';
 import TutupTokoDialog from '@/components/TutupTokoDialog';
+import TopUpModal from '@/components/TopUpModal';
+import LicenseExpiredDialog from '@/components/LicenseExpiredDialog';
 import PromoCarousel from '@/components/PromoCarousel';
 
 interface TxRow {
@@ -44,7 +47,9 @@ export default function Dashboard() {
   const { tokoHariIni, loading, bukaToko, tutupToko, refresh } = useToko();
   const { profile: tokoProfile } = useTokoProfile();
   const [tutupOpen, setTutupOpen] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
   const [transactions, setTransactions] = useState<TxRow[]>([]);
+  const { license, loading: licLoading, isTrial, isExpired, daysLeft } = useLicense();
   const [summary, setSummary] = useState({ count: 0, volume: 0, commission: 0 });
 
   const needsBuka = !loading && (!tokoHariIni || (tokoHariIni.status !== 'OPEN' && tokoHariIni.status !== 'CLOSED'));
@@ -94,6 +99,7 @@ export default function Dashboard() {
 
   const balance = tokoHariIni ? Number(tokoHariIni.saldo_kas_awal) + (Number(tokoHariIni.selisih_kas) || 0) : 0;
   const saldoRekening = tokoHariIni ? (Number(tokoHariIni.saldo_rekening_akhir) || Number(tokoHariIni.saldo_rekening_awal)) : 0;
+  const showLicenseDialog = !licLoading && isTrial && (isExpired || (daysLeft !== null && daysLeft <= 5));
 
   return (
     <div className="pb-20 min-h-screen">
@@ -187,9 +193,10 @@ export default function Dashboard() {
             { label: 'Tarik Tunai', icon: ArrowDownLeft, gradient: 'gradient-primary', path: '/transaksi' },
             { label: 'Setor Tunai', icon: ArrowUpRight, gradient: 'gradient-success', path: '/transaksi' },
             { label: 'Transfer', icon: Wallet, gradient: 'gradient-primary', path: '/transaksi' },
-            { label: 'Toko', icon: ShoppingBag, gradient: 'gradient-success', path: '/toko' },
+            { label: 'Top Up', icon: PlusCircle, gradient: 'gradient-success', action: () => setTopUpOpen(true) },
+            { label: 'Toko', icon: ShoppingBag, gradient: 'gradient-primary', path: '/toko' },
           ].map((action) => (
-            <button key={action.label} onClick={() => navigate(action.path)} className={`${action.gradient} rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-button active:scale-95 transition-transform`}>
+            <button key={action.label} onClick={() => action.action ? action.action() : navigate(action.path!)} className={`${action.gradient} rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-button active:scale-95 transition-transform`}>
               <action.icon className="h-5 w-5 text-primary-foreground" />
               <span className="text-[10px] font-semibold text-primary-foreground">{action.label}</span>
             </button>
@@ -245,6 +252,24 @@ export default function Dashboard() {
       {/* Tutup Toko Dialog */}
       {isOpen && tokoHariIni && (
         <TutupTokoDialog open={tutupOpen} onOpenChange={setTutupOpen} tokoData={tokoHariIni} onTutup={tutupToko} />
+      )}
+
+      {/* Top Up Modal */}
+      {isOpen && tokoHariIni && (
+        <TopUpModal
+          open={topUpOpen}
+          onOpenChange={setTopUpOpen}
+          tokoId={tokoHariIni.id}
+          currentKas={balance}
+          currentRekening={saldoRekening}
+          selisihKas={Number(tokoHariIni.selisih_kas) || 0}
+          onSuccess={refresh}
+        />
+      )}
+
+      {/* License Expired Dialog */}
+      {showLicenseDialog && (
+        <LicenseExpiredDialog open={showLicenseDialog} daysLeft={daysLeft} isExpired={isExpired} />
       )}
     </div>
   );
