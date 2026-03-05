@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      activation_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          duration_days: number | null
+          id: string
+          is_used: boolean
+          license_type: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          duration_days?: number | null
+          id?: string
+          is_used?: boolean
+          license_type?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          duration_days?: number | null
+          id?: string
+          is_used?: boolean
+          license_type?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       backups: {
         Row: {
           backup_date: string
@@ -112,6 +148,39 @@ export type Database = {
           description?: string
           id?: string
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      licenses: {
+        Row: {
+          activated_at: string | null
+          activation_code: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          license_type: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          activation_code?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          license_type?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          activation_code?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          license_type?: string
           user_id?: string
         }
         Relationships: []
@@ -303,6 +372,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      toko_profiles: {
+        Row: {
+          alamat: string
+          created_at: string
+          id: string
+          keterangan: string
+          nama: string
+          no_hp: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alamat?: string
+          created_at?: string
+          id?: string
+          keterangan?: string
+          nama?: string
+          no_hp?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alamat?: string
+          created_at?: string
+          id?: string
+          keterangan?: string
+          nama?: string
+          no_hp?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       transactions: {
         Row: {
