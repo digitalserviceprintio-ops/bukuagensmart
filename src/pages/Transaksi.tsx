@@ -61,6 +61,45 @@ export default function Transaksi() {
         });
       }
 
+      // Update saldo on buka_toko for today
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: tokoData } = await supabase
+        .from('buka_toko')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('tanggal', today)
+        .eq('status', 'OPEN')
+        .maybeSingle();
+
+      if (tokoData) {
+        const currentKas = Number(tokoData.saldo_kas_awal) + (Number(tokoData.selisih_kas) || 0);
+        const currentRek = Number(tokoData.saldo_rekening_awal);
+        
+        // tarik = kas keluar (customer ambil uang), setor = kas masuk, transfer = rekening berubah
+        let kasChange = 0;
+        let rekChange = 0;
+        if (selectedType === 'tarik') {
+          kasChange = -(numAmount); // kas berkurang karena uang keluar
+          rekChange = 0;
+        } else if (selectedType === 'setor') {
+          kasChange = numAmount; // kas bertambah
+          rekChange = 0;
+        } else if (selectedType === 'transfer') {
+          rekChange = -(numAmount); // rekening berkurang
+          kasChange = fee; // fee masuk kas
+        }
+        // Commission selalu tambah kas
+        kasChange += commission;
+
+        await supabase
+          .from('buka_toko')
+          .update({
+            selisih_kas: (Number(tokoData.selisih_kas) || 0) + kasChange,
+            saldo_rekening_akhir: currentRek + rekChange,
+          })
+          .eq('id', tokoData.id);
+      }
+
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);

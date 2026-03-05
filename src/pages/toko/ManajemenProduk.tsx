@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Plus, Search, Edit2, Trash2, ScanLine, Package } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ArrowLeft, Plus, Search, Edit2, Trash2, ScanLine, Package, Download, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { formatRupiah } from '@/data/mockData';
@@ -49,6 +49,55 @@ export default function ManajemenProduk() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanContext, setScanContext] = useState<'form' | 'search'>('search');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ---- Export CSV ----
+  const handleExportCSV = () => {
+    if (products.length === 0) { toast.error('Tidak ada produk'); return; }
+    const headers = ['Nama', 'Kategori', 'Harga Beli', 'Harga Jual', 'Stok', 'Stok Minimum', 'Barcode'];
+    const rows = products.map(p => [p.name, p.category, p.buy_price, p.sell_price, p.stock, p.min_stock, p.barcode]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `produk-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    toast.success('File CSV berhasil diunduh');
+  };
+
+  // ---- Import CSV ----
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { toast.error('File kosong atau format salah'); return; }
+      
+      let imported = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length < 6) continue;
+        const [name, category, buyPrice, sellPrice, stock, minStock, barcode] = cols;
+        if (!name) continue;
+        await addProduct({
+          name,
+          category: category || 'Lainnya',
+          buy_price: Number(buyPrice) || 0,
+          sell_price: Number(sellPrice) || 0,
+          stock: Number(stock) || 0,
+          min_stock: Number(minStock) || 5,
+          barcode: barcode || generateBarcode(),
+          photo_url: '',
+        });
+        imported++;
+      }
+      toast.success(`${imported} produk berhasil diimpor`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  };
 
   const filtered = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.barcode.includes(search);
@@ -129,10 +178,19 @@ export default function ManajemenProduk() {
         ))}
       </div>
 
-      {/* Add Button */}
-      <Button onClick={openAdd} className="w-full mb-4 gap-2">
-        <Plus className="h-4 w-4" /> Tambah Produk
-      </Button>
+      {/* Action Buttons */}
+      <div className="flex gap-2 mb-4">
+        <Button onClick={openAdd} className="flex-1 gap-2">
+          <Plus className="h-4 w-4" /> Tambah
+        </Button>
+        <Button variant="outline" onClick={handleExportCSV} className="gap-1">
+          <Download className="h-4 w-4" /> Export
+        </Button>
+        <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="gap-1">
+          <Upload className="h-4 w-4" /> Import
+        </Button>
+        <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleImportCSV} className="hidden" />
+      </div>
 
       {/* Product List */}
       {filtered.length === 0 ? (
