@@ -3,6 +3,7 @@ import { ArrowLeft, ScanLine, Plus, Minus, Trash2, ShoppingCart, Search, Printer
 import { useNavigate } from 'react-router-dom';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { useTokoProfile } from '@/hooks/useTokoProfile';
+import { useBluetoothPrinter, ReceiptData } from '@/hooks/useBluetoothPrinter';
 import { supabase } from '@/integrations/supabase/client';
 import { formatRupiah } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ export default function KasirPOS() {
   const navigate = useNavigate();
   const { products, findByBarcode, refresh } = useProducts();
   const { profile: tokoProfile } = useTokoProfile();
+  const printer = useBluetoothPrinter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [scanning, setScanning] = useState(false);
   const [search, setSearch] = useState('');
@@ -32,8 +34,6 @@ export default function KasirPOS() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [printerOpen, setPrinterOpen] = useState(false);
   const [cashPaid, setCashPaid] = useState(0);
-  const [bluetoothDevice, setBluetoothDevice] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState(false);
 
   const total = cart.reduce((s, i) => s + i.subtotal, 0);
   const grandTotal = Math.max(0, total - discount);
@@ -91,136 +91,122 @@ export default function KasirPOS() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Create POS transaction
     const { data: txData, error: txError } = await supabase
       .from('pos_transactions' as any)
       .insert({
-        user_id: user.id,
-        total,
-        discount,
-        grand_total: grandTotal,
-        payment_method: paymentMethod,
+        user_id: user.id, total, discount,
+        grand_total: grandTotal, payment_method: paymentMethod,
       } as any)
-      .select()
-      .single();
+      .select().single();
 
     if (txError || !txData) { toast.error('Gagal menyimpan transaksi'); console.error(txError); return; }
 
     const txId = (txData as any).id;
 
-    // Insert items
     const items = cart.map(i => ({
-      pos_transaction_id: txId,
-      product_id: i.product.id,
-      product_name: i.product.name,
-      qty: i.qty,
-      price: i.product.sell_price,
-      subtotal: i.subtotal,
+      pos_transaction_id: txId, product_id: i.product.id,
+      product_name: i.product.name, qty: i.qty,
+      price: i.product.sell_price, subtotal: i.subtotal,
     }));
 
     await supabase.from('pos_transaction_items' as any).insert(items as any);
 
-    // Update stock & record history
     for (const item of cart) {
       const newStock = item.product.stock - item.qty;
       await supabase.from('products' as any).update({ stock: newStock } as any).eq('id', item.product.id);
       await supabase.from('stock_history' as any).insert({
-        user_id: user.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        type: 'out',
-        qty: item.qty,
+        user_id: user.id, product_id: item.product.id,
+        product_name: item.product.name, type: 'out', qty: item.qty,
         note: `Penjualan POS #${txId.slice(0, 8)}`,
       } as any);
     }
 
-    // Update saldo kas (POS sales add to kas)
     const today = new Date().toISOString().slice(0, 10);
     const { data: tokoData } = await supabase
-      .from('buka_toko')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('tanggal', today)
-      .eq('status', 'OPEN')
+      .from('buka_toko').select('*')
+      .eq('user_id', user.id).eq('tanggal', today).eq('status', 'OPEN')
       .maybeSingle();
 
     if (tokoData) {
       const kasChange = paymentMethod === 'cash' ? grandTotal : 0;
       const rekChange = paymentMethod !== 'cash' ? grandTotal : 0;
-
-      await supabase
-        .from('buka_toko')
-        .update({
-          selisih_kas: (Number(tokoData.selisih_kas) || 0) + kasChange,
-          saldo_rekening_akhir: (Number(tokoData.saldo_rekening_akhir) || Number(tokoData.saldo_rekening_awal)) + rekChange,
-        })
-        .eq('id', tokoData.id);
+      await supabase.from('buka_toko').update({
+        selisih_kas: (Number(tokoData.selisih_kas) || 0) + kasChange,
+        saldo_rekening_akhir: (Number(tokoData.saldo_rekening_akhir) || Number(tokoData.saldo_rekening_awal)) + rekChange,
+      }).eq('id', tokoData.id);
     }
 
-    // Also record in cash_book
     await supabase.from('cash_book').insert({
-      user_id: user.id,
-      type: 'income',
-      amount: grandTotal,
+      user_id: user.id, type: 'income', amount: grandTotal,
       description: `Penjualan POS #${txId.slice(0, 8)} (${paymentMethod})`,
       category: 'Penjualan Toko',
     });
 
-    // Generate receipt PDF
-    generateReceipt(txId, cart, discount, grandTotal, paymentMethod, tokoProfile);
+    // Build receipt data
+    const receiptData: ReceiptData = {
+      txId,
+      items: cart.map(i => ({ name: i.product.name, qty: i.qty, price: i.product.sell_price, subtotal: i.subtotal })),
+      discount, grandTotal, paymentMethod,
+      cashPaid: paymentMethod === 'cash' ? cashPaid : undefined,
+      toko: tokoProfile.nama ? tokoProfile : undefined,
+    };
+
+    // Print via Bluetooth if connected, otherwise download PDF
+    if (printer.isConnected) {
+      await printer.printReceipt(receiptData);
+    } else {
+      generatePdfReceipt(receiptData);
+    }
 
     toast.success('Transaksi berhasil!');
     setCart([]);
     setDiscount(0);
+    setCashPaid(0);
     setCheckoutOpen(false);
     refresh();
   };
 
-  const generateReceipt = (txId: string, items: CartItem[], disc: number, gt: number, method: string, toko?: { nama: string; alamat: string; noHp: string }) => {
-    const doc = new jsPDF({ unit: 'mm', format: [80, 180] });
+  const generatePdfReceipt = (data: ReceiptData) => {
+    const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text(toko?.nama || 'STRUK PENJUALAN', 40, 8, { align: 'center' });
+    doc.text(data.toko?.nama || 'STRUK PENJUALAN', 40, 8, { align: 'center' });
     let y = 13;
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    if (toko?.alamat) { doc.text(toko.alamat, 40, y, { align: 'center' }); y += 4; }
-    if (toko?.noHp) { doc.text(`HP: ${toko.noHp}`, 40, y, { align: 'center' }); y += 4; }
-    doc.text(`No: ${txId.slice(0, 8)}`, 40, y, { align: 'center' });
-    y += 4;
-    doc.text(new Date().toLocaleString('id-ID'), 40, y, { align: 'center' });
-    y += 3;
-    doc.line(4, y, 76, y);
+    if (data.toko?.alamat) { doc.text(data.toko.alamat, 40, y, { align: 'center' }); y += 4; }
+    if (data.toko?.noHp) { doc.text(`HP: ${data.toko.noHp}`, 40, y, { align: 'center' }); y += 4; }
+    doc.text(`No: ${data.txId.slice(0, 8)}`, 40, y, { align: 'center' }); y += 4;
+    doc.text(new Date().toLocaleString('id-ID'), 40, y, { align: 'center' }); y += 3;
+    doc.line(4, y, 76, y); y += 4;
 
-    y += 4;
-    items.forEach(i => {
-      doc.text(i.product.name, 4, y);
-      doc.text(`${i.qty}x ${formatRupiah(i.product.sell_price)}`, 76, y, { align: 'right' });
-      y += 4;
-      doc.text(formatRupiah(i.subtotal), 76, y, { align: 'right' });
-      y += 5;
+    data.items.forEach(i => {
+      doc.text(i.name, 4, y);
+      doc.text(`${i.qty}x ${formatRupiah(i.price)}`, 76, y, { align: 'right' }); y += 4;
+      doc.text(formatRupiah(i.subtotal), 76, y, { align: 'right' }); y += 5;
     });
 
-    doc.line(4, y, 76, y);
-    y += 4;
+    doc.line(4, y, 76, y); y += 4;
+    const subtotal = data.items.reduce((s, i) => s + i.subtotal, 0);
     doc.text('Subtotal:', 4, y);
-    doc.text(formatRupiah(items.reduce((s, i) => s + i.subtotal, 0)), 76, y, { align: 'right' });
-    if (disc > 0) {
-      y += 4;
-      doc.text('Diskon:', 4, y);
-      doc.text(`-${formatRupiah(disc)}`, 76, y, { align: 'right' });
+    doc.text(formatRupiah(subtotal), 76, y, { align: 'right' });
+    if (data.discount > 0) {
+      y += 4; doc.text('Diskon:', 4, y);
+      doc.text(`-${formatRupiah(data.discount)}`, 76, y, { align: 'right' });
     }
     y += 4;
     doc.setFont('helvetica', 'bold');
     doc.text('TOTAL:', 4, y);
-    doc.text(formatRupiah(gt), 76, y, { align: 'right' });
-    y += 4;
+    doc.text(formatRupiah(data.grandTotal), 76, y, { align: 'right' }); y += 4;
     doc.setFont('helvetica', 'normal');
-    doc.text(`Bayar: ${method.toUpperCase()}`, 4, y);
+    doc.text(`Bayar: ${data.paymentMethod.toUpperCase()}`, 4, y);
+    if (data.paymentMethod === 'cash' && data.cashPaid && data.cashPaid > 0) {
+      y += 4; doc.text(`Tunai: ${formatRupiah(data.cashPaid)}`, 4, y);
+      y += 4; doc.text(`Kembali: ${formatRupiah(data.cashPaid - data.grandTotal)}`, 4, y);
+    }
     y += 6;
     doc.text('Terima kasih!', 40, y, { align: 'center' });
-
-    doc.save(`struk-pos-${txId.slice(0, 8)}.pdf`);
+    doc.save(`struk-pos-${data.txId.slice(0, 8)}.pdf`);
   };
 
   const searchResults = products.filter(p =>
@@ -238,7 +224,7 @@ export default function KasirPOS() {
         </div>
         <button onClick={() => setPrinterOpen(true)} className="p-2 rounded-xl bg-muted relative">
           <Printer className="h-5 w-5 text-foreground" />
-          {bluetoothDevice && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-secondary rounded-full border-2 border-background" />}
+          {printer.isConnected && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-secondary rounded-full border-2 border-background" />}
         </button>
       </div>
 
@@ -344,8 +330,35 @@ export default function KasirPOS() {
                 )}
               </div>
             )}
-            <Button onClick={handleCheckout} disabled={paymentMethod === 'cash' && cashPaid > 0 && cashPaid < grandTotal} className="w-full gradient-success text-secondary-foreground">
-              Proses & Cetak Struk
+
+            {/* Print method indicator */}
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
+              {printer.isConnected ? (
+                <>
+                  <span className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
+                  <Printer className="h-3.5 w-3.5 text-secondary" />
+                  <span className="text-[10px] text-secondary font-medium">Cetak ke {printer.deviceName}</span>
+                </>
+              ) : (
+                <>
+                  <Printer className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Download PDF (printer tidak terhubung)</span>
+                </>
+              )}
+            </div>
+
+            <Button
+              onClick={handleCheckout}
+              disabled={(paymentMethod === 'cash' && cashPaid > 0 && cashPaid < grandTotal) || printer.printing}
+              className="w-full gradient-success text-secondary-foreground gap-2"
+            >
+              {printer.printing ? (
+                <>Mencetak...</>
+              ) : printer.isConnected ? (
+                <><Printer className="h-4 w-4" /> Proses & Cetak Struk</>
+              ) : (
+                <><ShoppingCart className="h-4 w-4" /> Proses & Download Struk</>
+              )}
             </Button>
           </div>
         </DialogContent>
@@ -393,47 +406,47 @@ export default function KasirPOS() {
                   <p className="text-[10px] text-muted-foreground">Hubungkan printer thermal via Bluetooth</p>
                 </div>
               </div>
-              {bluetoothDevice ? (
+              {printer.isConnected ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-2 bg-secondary/10 rounded-lg">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
-                      <span className="text-xs font-medium text-foreground">{bluetoothDevice}</span>
+                      <span className="text-xs font-medium text-foreground">{printer.deviceName}</span>
                     </div>
                     <span className="text-[10px] text-secondary font-bold">Terhubung</span>
                   </div>
-                  <Button variant="outline" size="sm" className="w-full text-destructive" onClick={() => { setBluetoothDevice(null); toast.success('Printer terputus'); }}>
-                    Putuskan Koneksi
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      disabled={printer.printing}
+                      onClick={async () => {
+                        await printer.printReceipt({
+                          txId: 'TEST0000',
+                          items: [{ name: 'Test Print', qty: 1, price: 1000, subtotal: 1000 }],
+                          discount: 0, grandTotal: 1000, paymentMethod: 'cash',
+                          toko: tokoProfile.nama ? tokoProfile : undefined,
+                        });
+                      }}
+                    >
+                      <Printer className="h-3 w-3" />
+                      {printer.printing ? 'Mencetak...' : 'Test Print'}
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-destructive" onClick={printer.disconnect}>
+                      Putuskan
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <Button
                   variant="outline"
                   className="w-full gap-2"
-                  disabled={connecting}
-                  onClick={async () => {
-                    if (!(navigator as any).bluetooth) {
-                      toast.error('Bluetooth tidak didukung di browser ini. Gunakan Chrome di Android.');
-                      return;
-                    }
-                    setConnecting(true);
-                    try {
-                      const device = await (navigator as any).bluetooth.requestDevice({
-                        acceptAllDevices: true,
-                        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
-                      });
-                      setBluetoothDevice(device.name || 'Printer BT');
-                      toast.success(`Terhubung ke ${device.name || 'Printer'}`);
-                    } catch (err: any) {
-                      if (err.name !== 'NotFoundError') {
-                        toast.error('Gagal menghubungkan: ' + (err.message || 'Unknown error'));
-                      }
-                    }
-                    setConnecting(false);
-                  }}
+                  disabled={printer.connecting}
+                  onClick={printer.connect}
                 >
                   <Bluetooth className="h-4 w-4" />
-                  {connecting ? 'Mencari...' : 'Cari Printer Bluetooth'}
+                  {printer.connecting ? 'Mencari...' : 'Cari Printer Bluetooth'}
                 </Button>
               )}
             </div>
@@ -441,6 +454,7 @@ export default function KasirPOS() {
               <p>• Pastikan printer thermal Bluetooth sudah dinyalakan</p>
               <p>• Gunakan browser Chrome di perangkat Android</p>
               <p>• Printer yang didukung: ESC/POS 58mm / 80mm</p>
+              <p>• Jika printer tidak terhubung, struk akan diunduh sebagai PDF</p>
             </div>
           </div>
         </DialogContent>
