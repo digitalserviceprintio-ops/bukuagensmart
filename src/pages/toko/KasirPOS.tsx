@@ -412,13 +412,13 @@ export default function KasirPOS() {
                   className="w-full gap-2"
                   disabled={connecting}
                   onClick={async () => {
-                    if (!navigator.bluetooth) {
+                    if (!(navigator as any).bluetooth) {
                       toast.error('Bluetooth tidak didukung di browser ini. Gunakan Chrome di Android.');
                       return;
                     }
                     setConnecting(true);
                     try {
-                      const device = await navigator.bluetooth.requestDevice({
+                      const device = await (navigator as any).bluetooth.requestDevice({
                         acceptAllDevices: true,
                         optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
                       });
