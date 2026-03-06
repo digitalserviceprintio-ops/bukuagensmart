@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ArrowLeft, ScanLine, Plus, Minus, Trash2, ShoppingCart, Search } from 'lucide-react';
+import { ArrowLeft, ScanLine, Plus, Minus, Trash2, ShoppingCart, Search, Printer, Bluetooth } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { useTokoProfile } from '@/hooks/useTokoProfile';
@@ -30,6 +30,10 @@ export default function KasirPOS() {
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [printerOpen, setPrinterOpen] = useState(false);
+  const [cashPaid, setCashPaid] = useState(0);
+  const [bluetoothDevice, setBluetoothDevice] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
 
   const total = cart.reduce((s, i) => s + i.subtotal, 0);
   const grandTotal = Math.max(0, total - discount);
@@ -225,11 +229,17 @@ export default function KasirPOS() {
 
   return (
     <div className="pb-20 min-h-screen px-5 pt-6">
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate('/toko')} className="p-2 rounded-xl bg-muted">
-          <ArrowLeft className="h-5 w-5 text-foreground" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/toko')} className="p-2 rounded-xl bg-muted">
+            <ArrowLeft className="h-5 w-5 text-foreground" />
+          </button>
+          <h1 className="text-lg font-bold text-foreground">Kasir POS</h1>
+        </div>
+        <button onClick={() => setPrinterOpen(true)} className="p-2 rounded-xl bg-muted relative">
+          <Printer className="h-5 w-5 text-foreground" />
+          {bluetoothDevice && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-secondary rounded-full border-2 border-background" />}
         </button>
-        <h1 className="text-lg font-bold text-foreground">Kasir POS</h1>
       </div>
 
       {/* Scan & Search */}
@@ -311,7 +321,7 @@ export default function KasirPOS() {
             </div>
             <div>
               <label className="text-xs font-medium">Metode Pembayaran</label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <Select value={paymentMethod} onValueChange={(v) => { setPaymentMethod(v); setCashPaid(0); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cash">Cash</SelectItem>
@@ -320,7 +330,21 @@ export default function KasirPOS() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleCheckout} className="w-full gradient-success text-secondary-foreground">
+            {paymentMethod === 'cash' && (
+              <div>
+                <label className="text-xs font-medium">Uang Dibayar (Rp)</label>
+                <Input type="number" value={cashPaid || ''} onChange={e => setCashPaid(Number(e.target.value))} placeholder="Masukkan nominal uang" />
+                {cashPaid > 0 && (
+                  <div className="flex justify-between mt-2 p-2 rounded-lg bg-muted">
+                    <span className="text-xs font-medium">Kembalian</span>
+                    <span className={`text-sm font-bold ${cashPaid >= grandTotal ? 'text-secondary' : 'text-destructive'}`}>
+                      {cashPaid >= grandTotal ? formatRupiah(cashPaid - grandTotal) : 'Kurang ' + formatRupiah(grandTotal - cashPaid)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            <Button onClick={handleCheckout} disabled={paymentMethod === 'cash' && cashPaid > 0 && cashPaid < grandTotal} className="w-full gradient-success text-secondary-foreground">
               Proses & Cetak Struk
             </Button>
           </div>
@@ -348,6 +372,76 @@ export default function KasirPOS() {
             {searchResults.length === 0 && search && (
               <p className="text-center text-sm text-muted-foreground py-4">Tidak ditemukan</p>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Printer Settings Dialog */}
+      <Dialog open={printerOpen} onOpenChange={setPrinterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="h-5 w-5" /> Atur Printer
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted rounded-xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Bluetooth className="h-5 w-5 text-info" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Koneksi Bluetooth</p>
+                  <p className="text-[10px] text-muted-foreground">Hubungkan printer thermal via Bluetooth</p>
+                </div>
+              </div>
+              {bluetoothDevice ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2 bg-secondary/10 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
+                      <span className="text-xs font-medium text-foreground">{bluetoothDevice}</span>
+                    </div>
+                    <span className="text-[10px] text-secondary font-bold">Terhubung</span>
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full text-destructive" onClick={() => { setBluetoothDevice(null); toast.success('Printer terputus'); }}>
+                    Putuskan Koneksi
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  disabled={connecting}
+                  onClick={async () => {
+                    if (!navigator.bluetooth) {
+                      toast.error('Bluetooth tidak didukung di browser ini. Gunakan Chrome di Android.');
+                      return;
+                    }
+                    setConnecting(true);
+                    try {
+                      const device = await navigator.bluetooth.requestDevice({
+                        acceptAllDevices: true,
+                        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'],
+                      });
+                      setBluetoothDevice(device.name || 'Printer BT');
+                      toast.success(`Terhubung ke ${device.name || 'Printer'}`);
+                    } catch (err: any) {
+                      if (err.name !== 'NotFoundError') {
+                        toast.error('Gagal menghubungkan: ' + (err.message || 'Unknown error'));
+                      }
+                    }
+                    setConnecting(false);
+                  }}
+                >
+                  <Bluetooth className="h-4 w-4" />
+                  {connecting ? 'Mencari...' : 'Cari Printer Bluetooth'}
+                </Button>
+              )}
+            </div>
+            <div className="text-[10px] text-muted-foreground space-y-1">
+              <p>• Pastikan printer thermal Bluetooth sudah dinyalakan</p>
+              <p>• Gunakan browser Chrome di perangkat Android</p>
+              <p>• Printer yang didukung: ESC/POS 58mm / 80mm</p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
