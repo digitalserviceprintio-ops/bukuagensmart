@@ -106,19 +106,28 @@ export default function Dashboard() {
       {/* Header */}
       <div className="gradient-hero px-5 pt-6 pb-10 rounded-b-3xl">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex-1 min-w-0">
+          <button onClick={() => navigate('/profil/toko')} className="flex-1 min-w-0 text-left group">
             {tokoProfile.nama ? (
               <>
-                <p className="text-sm font-bold text-primary-foreground truncate">{tokoProfile.nama}</p>
-                {tokoProfile.alamat && <p className="text-[10px] text-primary-foreground/50 truncate">{tokoProfile.alamat}</p>}
+                <div className="flex items-center gap-1">
+                  <Store className="h-3.5 w-3.5 text-primary-foreground/70" />
+                  <p className="text-sm font-bold text-primary-foreground truncate">{tokoProfile.nama}</p>
+                  <ChevronRight className="h-3 w-3 text-primary-foreground/40 group-hover:text-primary-foreground/70 transition-colors" />
+                </div>
+                {tokoProfile.alamat && <p className="text-[10px] text-primary-foreground/50 truncate ml-[18px]">{tokoProfile.alamat}</p>}
+                <p className="text-[9px] text-primary-foreground/30 ml-[18px]">Counter & ATK • Tap untuk atur profil</p>
               </>
             ) : (
               <>
                 <p className="text-primary-foreground/70 text-sm">Selamat datang,</p>
-                <h1 className="text-lg font-bold text-primary-foreground">Agen</h1>
+                <div className="flex items-center gap-1">
+                  <h1 className="text-lg font-bold text-primary-foreground">Counter & ATK</h1>
+                  <ChevronRight className="h-3 w-3 text-primary-foreground/40" />
+                </div>
+                <p className="text-[9px] text-primary-foreground/30">Tap untuk atur profil toko</p>
               </>
             )}
-          </div>
+          </button>
           <div className="flex items-center gap-2">
             <DigitalClock />
             {isOpen && (
