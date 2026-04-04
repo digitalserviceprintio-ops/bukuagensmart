@@ -52,7 +52,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-success mb-4 shadow-button">
             <Shield className="h-8 w-8 text-secondary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-primary-foreground">Buku Agen</h1>
+          <h1 className="text-2xl font-bold text-primary-foreground">{APP_NAME}</h1>
           <p className="text-primary-foreground/70 text-sm mt-1">Tarik Tunai & Setor Tunai</p>
         </div>
 
