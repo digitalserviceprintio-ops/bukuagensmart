@@ -18,7 +18,7 @@ export default function TentangAplikasi() {
       </div>
       <div className="bg-card rounded-2xl p-5 shadow-card space-y-3">
         <p className="text-sm text-foreground leading-relaxed">
-          <strong>Buku Agen</strong> adalah aplikasi pencatatan transaksi digital untuk agen layanan keuangan. 
+          <strong>{APP_NAME}</strong> adalah aplikasi pencatatan transaksi digital untuk agen layanan keuangan. 
           Didesain untuk mempermudah pencatatan tarik tunai, setor tunai, dan transfer.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
