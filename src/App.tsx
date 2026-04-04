@@ -1,9 +1,11 @@
+import { useState, useCallback } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import SplashScreen from "@/components/SplashScreen";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Transaksi from "./pages/Transaksi";
@@ -45,38 +47,44 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>;
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/transaksi" element={<ProtectedRoute><Transaksi /></ProtectedRoute>} />
-          <Route path="/buku-kas" element={<ProtectedRoute><BukuKas /></ProtectedRoute>} />
-          <Route path="/laporan" element={<ProtectedRoute><Laporan /></ProtectedRoute>} />
-          <Route path="/profil" element={<ProtectedRoute><Profil /></ProtectedRoute>} />
-          <Route path="/profil/keamanan" element={<ProtectedRoute><KeamananPin /></ProtectedRoute>} />
-          <Route path="/profil/riwayat" element={<ProtectedRoute><RiwayatAktivitas /></ProtectedRoute>} />
-          <Route path="/profil/bantuan" element={<ProtectedRoute><Bantuan /></ProtectedRoute>} />
-          <Route path="/profil/tentang" element={<ProtectedRoute><TentangAplikasi /></ProtectedRoute>} />
-          <Route path="/profil/biaya-admin" element={<ProtectedRoute><AturBiayaAdmin /></ProtectedRoute>} />
-          <Route path="/profil/reset" element={<ProtectedRoute><ResetData /></ProtectedRoute>} />
-          <Route path="/profil/toko" element={<ProtectedRoute><AturProfilToko /></ProtectedRoute>} />
-          <Route path="/profil/lisensi" element={<ProtectedRoute><Lisensi /></ProtectedRoute>} />
-          <Route path="/dev/activation" element={<ProtectedRoute><DevActivation /></ProtectedRoute>} />
-          <Route path="/toko" element={<ProtectedRoute><TokoDashboard /></ProtectedRoute>} />
-          <Route path="/toko/produk" element={<ProtectedRoute><ManajemenProduk /></ProtectedRoute>} />
-          <Route path="/toko/kasir" element={<ProtectedRoute><KasirPOS /></ProtectedRoute>} />
-          <Route path="/toko/stok" element={<ProtectedRoute><ManajemenStok /></ProtectedRoute>} />
-          <Route path="/toko/laporan" element={<ProtectedRoute><LaporanToko /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/transaksi" element={<ProtectedRoute><Transaksi /></ProtectedRoute>} />
+            <Route path="/buku-kas" element={<ProtectedRoute><BukuKas /></ProtectedRoute>} />
+            <Route path="/laporan" element={<ProtectedRoute><Laporan /></ProtectedRoute>} />
+            <Route path="/profil" element={<ProtectedRoute><Profil /></ProtectedRoute>} />
+            <Route path="/profil/keamanan" element={<ProtectedRoute><KeamananPin /></ProtectedRoute>} />
+            <Route path="/profil/riwayat" element={<ProtectedRoute><RiwayatAktivitas /></ProtectedRoute>} />
+            <Route path="/profil/bantuan" element={<ProtectedRoute><Bantuan /></ProtectedRoute>} />
+            <Route path="/profil/tentang" element={<ProtectedRoute><TentangAplikasi /></ProtectedRoute>} />
+            <Route path="/profil/biaya-admin" element={<ProtectedRoute><AturBiayaAdmin /></ProtectedRoute>} />
+            <Route path="/profil/reset" element={<ProtectedRoute><ResetData /></ProtectedRoute>} />
+            <Route path="/profil/toko" element={<ProtectedRoute><AturProfilToko /></ProtectedRoute>} />
+            <Route path="/profil/lisensi" element={<ProtectedRoute><Lisensi /></ProtectedRoute>} />
+            <Route path="/dev/activation" element={<ProtectedRoute><DevActivation /></ProtectedRoute>} />
+            <Route path="/toko" element={<ProtectedRoute><TokoDashboard /></ProtectedRoute>} />
+            <Route path="/toko/produk" element={<ProtectedRoute><ManajemenProduk /></ProtectedRoute>} />
+            <Route path="/toko/kasir" element={<ProtectedRoute><KasirPOS /></ProtectedRoute>} />
+            <Route path="/toko/stok" element={<ProtectedRoute><ManajemenStok /></ProtectedRoute>} />
+            <Route path="/toko/laporan" element={<ProtectedRoute><LaporanToko /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
