@@ -1,0 +1,22 @@
+{
+  "name": "Buku Agen MD2R",
+  "short_name": "Buku Agen",
+  "description": "Aplikasi catat transaksi agen MD2R",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a2d42",
+  "theme_color": "#1a2d42",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
