@@ -90,6 +90,7 @@ export default function Login() {
             </button>
           </p>
         </div>
+        <p className="text-center text-xs text-primary-foreground/50 mt-4">v{APP_VERSION}</p>
       </div>
     </div>
   );

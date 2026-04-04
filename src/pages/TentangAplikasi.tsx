@@ -27,7 +27,7 @@ export default function TentangAplikasi() {
         </p>
         <div className="border-t border-border pt-3 space-y-1">
           <p className="text-xs text-muted-foreground">Dikembangkan dengan ❤️ oleh <strong className="text-foreground">Andriawan Delv</strong></p>
-          <p className="text-xs text-muted-foreground">© 2026 Buku Agen. Semua hak dilindungi.</p>
+          <p className="text-xs text-muted-foreground">© 2026 {APP_NAME}. Semua hak dilindungi.</p>
         </div>
       </div>
     </div>
