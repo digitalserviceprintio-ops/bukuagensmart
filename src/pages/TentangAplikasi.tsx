@@ -1,5 +1,6 @@
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { APP_NAME, APP_VERSION } from '@/constants/app';
 
 export default function TentangAplikasi() {
   const navigate = useNavigate();
