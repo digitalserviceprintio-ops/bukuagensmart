@@ -13,8 +13,8 @@ export default function TentangAplikasi() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-success mb-3 shadow-button">
           <Shield className="h-8 w-8 text-secondary-foreground" />
         </div>
-        <h1 className="text-xl font-bold text-foreground">Buku Agen</h1>
-        <p className="text-sm text-muted-foreground">Versi 1.0.0</p>
+        <h1 className="text-xl font-bold text-foreground">{APP_NAME}</h1>
+        <p className="text-sm text-muted-foreground">Versi {APP_VERSION}</p>
       </div>
       <div className="bg-card rounded-2xl p-5 shadow-card space-y-3">
         <p className="text-sm text-foreground leading-relaxed">
