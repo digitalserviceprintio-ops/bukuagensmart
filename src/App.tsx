@@ -5,7 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import SplashScreen from "@/components/SplashScreen";
+import MaintenanceDialog from "@/components/MaintenanceDialog";
+import UpdateDialog from "@/components/UpdateDialog";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Transaksi from "./pages/Transaksi";
@@ -49,14 +52,22 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
+  const [dismissUpdate, setDismissUpdate] = useState(false);
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
-
+  const appSettings = useAppSettings();
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+        <MaintenanceDialog open={appSettings.maintenanceMode} message={appSettings.maintenanceMessage} />
+        <UpdateDialog
+          open={appSettings.hasUpdate && !dismissUpdate && !appSettings.maintenanceMode && !showSplash}
+          latestVersion={appSettings.latestVersion}
+          onUpdate={() => window.location.reload()}
+          onDismiss={() => setDismissUpdate(true)}
+        />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
