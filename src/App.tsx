@@ -52,8 +52,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
+  const [dismissUpdate, setDismissUpdate] = useState(false);
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
-
+  const appSettings = useAppSettings();
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
