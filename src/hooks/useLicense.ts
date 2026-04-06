@@ -59,6 +59,17 @@ export function useLicense() {
     if (!codeData) return 'Kode aktivasi tidak valid atau sudah digunakan';
 
     const ac = codeData as any;
+
+    // Check if this user already used this specific code
+    const { data: existingLicense } = await supabase
+      .from('licenses' as any)
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('activation_code', code.toUpperCase())
+      .maybeSingle();
+
+    if (existingLicense) return 'Anda sudah menggunakan kode ini';
+
     const expiresAt = ac.license_type === 'lifetime'
       ? null
       : new Date(Date.now() + (ac.duration_days || 30) * 24 * 60 * 60 * 1000).toISOString();
@@ -75,11 +86,13 @@ export function useLicense() {
         is_active: true,
       } as any, { onConflict: 'user_id' });
 
-    // Mark code as used
-    await supabase
-      .from('activation_codes' as any)
-      .update({ is_used: true, used_by: user.id, used_at: new Date().toISOString() } as any)
-      .eq('id', ac.id);
+    // Only mark as used for non-reusable codes (not MD2R-APP-AGEN)
+    if (code.toUpperCase() !== 'MD2R-APP-AGEN') {
+      await supabase
+        .from('activation_codes' as any)
+        .update({ is_used: true, used_by: user.id, used_at: new Date().toISOString() } as any)
+        .eq('id', ac.id);
+    }
 
     await fetchLicense();
     return null;
