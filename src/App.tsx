@@ -61,6 +61,13 @@ const App = () => {
         <Toaster />
         <Sonner />
         {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+        <MaintenanceDialog open={appSettings.maintenanceMode} message={appSettings.maintenanceMessage} />
+        <UpdateDialog
+          open={appSettings.hasUpdate && !dismissUpdate && !appSettings.maintenanceMode && !showSplash}
+          latestVersion={appSettings.latestVersion}
+          onUpdate={() => window.location.reload()}
+          onDismiss={() => setDismissUpdate(true)}
+        />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
