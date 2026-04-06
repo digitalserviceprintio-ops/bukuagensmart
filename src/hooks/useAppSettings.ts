@@ -22,7 +22,7 @@ export function useAppSettings(): AppSettings {
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
-        .from('app_settings')
+        .from('app_settings' as any)
         .select('key, value');
 
       if (error || !data) {
