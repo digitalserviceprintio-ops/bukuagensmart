@@ -48,13 +48,17 @@ export function useLicense() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return 'Tidak terautentikasi';
 
-    // Find the activation code
-    const { data: codeData } = await supabase
+    // Find the activation code - for reusable codes like MD2R-APP-AGEN, don't filter by is_used
+    let codeQuery = supabase
       .from('activation_codes' as any)
       .select('*')
-      .eq('code', code.toUpperCase())
-      .eq('is_used', false)
-      .maybeSingle();
+      .eq('code', code.toUpperCase());
+
+    if (code.toUpperCase() !== 'MD2R-APP-AGEN') {
+      codeQuery = codeQuery.eq('is_used', false);
+    }
+
+    const { data: codeData } = await codeQuery.maybeSingle();
 
     if (!codeData) return 'Kode aktivasi tidak valid atau sudah digunakan';
 
