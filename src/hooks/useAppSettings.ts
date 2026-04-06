@@ -30,7 +30,7 @@ export function useAppSettings(): AppSettings {
         return;
       }
 
-      const map = Object.fromEntries(data.map(r => [r.key, r.value]));
+      const map = Object.fromEntries((data as any[]).map((r: any) => [r.key, r.value]));
       const latestVersion = map['latest_version'] || APP_VERSION;
 
       setSettings({
