@@ -11,6 +11,7 @@ import TutupTokoDialog from '@/components/TutupTokoDialog';
 import TopUpModal from '@/components/TopUpModal';
 import LicenseExpiredDialog from '@/components/LicenseExpiredDialog';
 import PromoCarousel from '@/components/PromoCarousel';
+import GlassSkeletonLoader from '@/components/GlassSkeletonLoader';
 
 interface TxRow {
   id: string;
@@ -85,7 +86,7 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  if (loading) return null;
+  if (loading) return <GlassSkeletonLoader type="dashboard" />;
 
   if (needsBuka) {
     return (
