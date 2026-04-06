@@ -20,7 +20,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
           <Shield className="h-10 w-10 text-secondary-foreground" />
         </div>
         <h1 className="text-2xl font-bold text-primary-foreground mb-1">{APP_NAME}</h1>
-        <p className="text-primary-foreground/60 text-sm">Tarik Tunai & Setor Tunai</p>
+        <p className="text-primary-foreground/60 text-sm">Manajemen Tarik Tunai & Setor Tunai</p>
         <div className="mt-8">
           <div className="w-8 h-8 border-3 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
         </div>
