@@ -134,19 +134,20 @@ export default function AdminPanel() {
   // ── Users ──
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabase.functions.invoke('admin-panel', {
+      body: null,
+      headers: {},
+    });
+    // Use query param approach
+    const { data: result } = await supabase.functions.invoke('admin-panel?action=users');
 
-    const { data: licenses } = await supabase
-      .from('licenses')
-      .select('*');
+    const profiles = result?.profiles || [];
+    const licenses = result?.licenses || [];
 
     const licenseMap = new Map<string, UserLicense>();
-    (licenses || []).forEach((l: any) => licenseMap.set(l.user_id, l));
+    licenses.forEach((l: any) => licenseMap.set(l.user_id, l));
 
-    const merged = (profiles || []).map((p: any) => ({
+    const merged = profiles.map((p: any) => ({
       ...p,
       license: licenseMap.get(p.user_id),
     }));
