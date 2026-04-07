@@ -24,6 +24,7 @@ import ResetData from "./pages/ResetData";
 import AturProfilToko from "./pages/AturProfilToko";
 import Lisensi from "./pages/Lisensi";
 import DevActivation from "./pages/DevActivation";
+import AdminPanel from "./pages/AdminPanel";
 import BottomNav from "./components/BottomNav";
 import NotFound from "./pages/NotFound";
 import TokoDashboard from "./pages/toko/TokoDashboard";
