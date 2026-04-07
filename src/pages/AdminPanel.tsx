@@ -170,10 +170,14 @@ export default function AdminPanel() {
       { key: 'maintenance_message', value: maintenanceMsg },
       { key: 'latest_version', value: latestVersion },
     ];
-    for (const s of settings) {
-      await supabase.from('app_settings').upsert(s, { onConflict: 'key' });
+    const { data, error } = await supabase.functions.invoke('admin-panel', {
+      body: { action: 'save-settings', settings },
+    });
+    if (error || data?.error) {
+      toast({ title: 'Gagal', description: 'Gagal menyimpan pengaturan', variant: 'destructive' });
+    } else {
+      toast({ title: 'Tersimpan', description: 'Pengaturan berhasil diperbarui' });
     }
-    toast({ title: 'Tersimpan', description: 'Pengaturan berhasil diperbarui' });
     setSavingSettings(false);
   };
 
