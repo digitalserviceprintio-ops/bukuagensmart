@@ -86,6 +86,7 @@ const App = () => {
             <Route path="/profil/toko" element={<ProtectedRoute><AturProfilToko /></ProtectedRoute>} />
             <Route path="/profil/lisensi" element={<ProtectedRoute><Lisensi /></ProtectedRoute>} />
             <Route path="/dev/activation" element={<ProtectedRoute><DevActivation /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
             <Route path="/toko" element={<ProtectedRoute><TokoDashboard /></ProtectedRoute>} />
             <Route path="/toko/produk" element={<ProtectedRoute><ManajemenProduk /></ProtectedRoute>} />
             <Route path="/toko/kasir" element={<ProtectedRoute><KasirPOS /></ProtectedRoute>} />
