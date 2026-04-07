@@ -45,57 +45,19 @@ export function useLicense() {
   useEffect(() => { fetchLicense(); }, []);
 
   const activateCode = async (code: string): Promise<string | null> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return 'Tidak terautentikasi';
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return 'Tidak terautentikasi';
 
-    // Find the activation code - for reusable codes like MD2R-APP-AGEN, don't filter by is_used
-    let codeQuery = supabase
-      .from('activation_codes' as any)
-      .select('*')
-      .eq('code', code.toUpperCase());
+    const { data, error } = await supabase.functions.invoke('activate-license', {
+      body: { code },
+    });
 
-    if (code.toUpperCase() !== 'MD2R-APP-AGEN') {
-      codeQuery = codeQuery.eq('is_used', false);
+    if (error) {
+      return 'Gagal menghubungi server';
     }
 
-    const { data: codeData } = await codeQuery.maybeSingle();
-
-    if (!codeData) return 'Kode aktivasi tidak valid atau sudah digunakan';
-
-    const ac = codeData as any;
-
-    // Check if this user already used this specific code
-    const { data: existingLicense } = await supabase
-      .from('licenses' as any)
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('activation_code', code.toUpperCase())
-      .maybeSingle();
-
-    if (existingLicense) return 'Anda sudah menggunakan kode ini';
-
-    const expiresAt = ac.license_type === 'lifetime'
-      ? null
-      : new Date(Date.now() + (ac.duration_days || 30) * 24 * 60 * 60 * 1000).toISOString();
-
-    // Update license
-    await supabase
-      .from('licenses' as any)
-      .upsert({
-        user_id: user.id,
-        license_type: ac.license_type,
-        activation_code: code.toUpperCase(),
-        activated_at: new Date().toISOString(),
-        expires_at: expiresAt,
-        is_active: true,
-      } as any, { onConflict: 'user_id' });
-
-    // Only mark as used for non-reusable codes (not MD2R-APP-AGEN)
-    if (code.toUpperCase() !== 'MD2R-APP-AGEN') {
-      await supabase
-        .from('activation_codes' as any)
-        .update({ is_used: true, used_by: user.id, used_at: new Date().toISOString() } as any)
-        .eq('id', ac.id);
+    if (data?.error) {
+      return data.error;
     }
 
     await fetchLicense();
