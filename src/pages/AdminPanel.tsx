@@ -134,12 +134,9 @@ export default function AdminPanel() {
   // ── Users ──
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.functions.invoke('admin-panel', {
-      body: null,
-      headers: {},
+    const { data: result } = await supabase.functions.invoke('admin-panel', {
+      body: { action: 'users' },
     });
-    // Use query param approach
-    const { data: result } = await supabase.functions.invoke('admin-panel?action=users');
 
     const profiles = result?.profiles || [];
     const licenses = result?.licenses || [];
