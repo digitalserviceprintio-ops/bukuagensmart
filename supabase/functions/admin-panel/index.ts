@@ -53,10 +53,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action");
+    const { action, settings } = await req.json();
 
-    // GET users with licenses
     if (action === "users") {
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
@@ -72,9 +70,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Save app settings
-    if (action === "save-settings" && req.method === "POST") {
-      const { settings } = await req.json();
+    if (action === "save-settings" && settings) {
       for (const s of settings) {
         await supabaseAdmin
           .from("app_settings")
