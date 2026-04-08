@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Plus, Search, Edit2, Trash2, ScanLine, Package, Download, Upload } from 'lucide-react';
+import { ArrowLeft, Plus, Search, Edit2, Trash2, ScanLine, Package, Download, Upload, Camera, X, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { formatRupiah } from '@/data/mockData';
@@ -10,13 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { resizeImage } from '@/lib/imageResize';
 
 const CATEGORIES = ['Pulsa', 'Aksesoris HP', 'ATK', 'Makanan', 'Minuman', 'Rokok', 'Token Listrik', 'Lainnya'];
 
 function generateBarcode(): string {
   let code = '';
   for (let i = 0; i < 12; i++) code += Math.floor(Math.random() * 10).toString();
-  // EAN-13 check digit
   let sum = 0;
   for (let i = 0; i < 12; i++) sum += parseInt(code[i]) * (i % 2 === 0 ? 1 : 3);
   code += ((10 - (sum % 10)) % 10).toString();
@@ -50,6 +51,54 @@ export default function ManajemenProduk() {
   const [scanning, setScanning] = useState(false);
   const [scanContext, setScanContext] = useState<'form' | 'search'>('search');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // ---- Photo handling ----
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Pilih file gambar');
+      return;
+    }
+    setPhotoFile(file);
+    // Create preview from original
+    const url = URL.createObjectURL(file);
+    setPhotoPreview(url);
+  };
+
+  const uploadPhoto = async (): Promise<string> => {
+    if (!photoFile) return form.photo_url;
+    setUploading(true);
+    try {
+      const resized = await resizeImage(photoFile, 480, 480, 0.7);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const fileName = `${user.id}/${Date.now()}.jpg`;
+      const { error } = await supabase.storage
+        .from('product-photos')
+        .upload(fileName, resized, { contentType: 'image/jpeg', upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('product-photos').getPublicUrl(fileName);
+      return urlData.publicUrl;
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      toast.error('Gagal upload gambar');
+      return form.photo_url;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const clearPhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setForm(f => ({ ...f, photo_url: '' }));
+    if (photoInputRef.current) photoInputRef.current.value = '';
+  };
 
   // ---- Export CSV ----
   const handleExportCSV = () => {
@@ -108,25 +157,40 @@ export default function ManajemenProduk() {
   const openAdd = () => {
     setEditId(null);
     setForm({ ...emptyForm, barcode: generateBarcode() });
+    setPhotoPreview(null);
+    setPhotoFile(null);
     setDialogOpen(true);
   };
 
   const openEdit = (p: Product) => {
     setEditId(p.id);
     setForm({ name: p.name, category: p.category, buy_price: p.buy_price, sell_price: p.sell_price, stock: p.stock, min_stock: p.min_stock, barcode: p.barcode, photo_url: p.photo_url });
+    setPhotoPreview(p.photo_url || null);
+    setPhotoFile(null);
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Nama produk wajib diisi'); return; }
+    
+    // Upload photo if new file selected
+    let photoUrl = form.photo_url;
+    if (photoFile) {
+      photoUrl = await uploadPhoto();
+    }
+    
+    const productData = { ...form, photo_url: photoUrl };
+    
     if (editId) {
-      await updateProduct(editId, form);
+      await updateProduct(editId, productData);
       toast.success('Produk diperbarui');
     } else {
-      await addProduct(form);
+      await addProduct(productData);
       toast.success('Produk ditambahkan');
     }
     setDialogOpen(false);
+    setPhotoFile(null);
+    setPhotoPreview(null);
   };
 
   const handleDelete = async () => {
@@ -202,8 +266,12 @@ export default function ManajemenProduk() {
         <div className="space-y-2">
           {filtered.map(p => (
             <div key={p.id} className="bg-card rounded-xl p-3 shadow-card flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <Package className="h-6 w-6 text-muted-foreground" />
+              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                {p.photo_url ? (
+                  <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <Package className="h-6 w-6 text-muted-foreground" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
@@ -230,6 +298,51 @@ export default function ManajemenProduk() {
             <DialogTitle>{editId ? 'Edit Produk' : 'Tambah Produk'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {/* Photo Upload */}
+            <div>
+              <label className="text-xs font-medium text-foreground mb-1.5 block">Foto Produk</label>
+              <div className="flex items-center gap-3">
+                <div className="relative w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border shrink-0">
+                  {photoPreview ? (
+                    <>
+                      <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={clearPhoto}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-sm"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <Camera className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => photoInputRef.current?.click()}
+                  >
+                    <Camera className="h-4 w-4" />
+                    {photoPreview ? 'Ganti Foto' : 'Pilih dari Galeri'}
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground">
+                    Otomatis dikecilkan maks 480×480px
+                  </p>
+                </div>
+              </div>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoSelect}
+                className="hidden"
+              />
+            </div>
+
             <div>
               <label className="text-xs font-medium text-foreground">Nama Produk *</label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
@@ -275,7 +388,11 @@ export default function ManajemenProduk() {
                 </Button>
               </div>
             </div>
-            <Button onClick={handleSave} className="w-full">{editId ? 'Simpan Perubahan' : 'Tambah Produk'}</Button>
+            <Button onClick={handleSave} disabled={uploading} className="w-full">
+              {uploading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Mengupload...</>
+              ) : editId ? 'Simpan Perubahan' : 'Tambah Produk'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
