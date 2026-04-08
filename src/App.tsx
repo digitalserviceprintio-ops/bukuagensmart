@@ -53,9 +53,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const [dismissUpdate, setDismissUpdate] = useState(false);
+  const [dismissUpdate, setDismissUpdate] = useState(() => {
+    const dismissed = localStorage.getItem('dismissedUpdateVersion');
+    return dismissed === 'pending'; // will be checked against actual version below
+  });
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
   const appSettings = useAppSettings();
+
+  const isUpdateDismissed = dismissUpdate || localStorage.getItem('dismissedUpdateVersion') === appSettings.latestVersion;
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -64,10 +70,13 @@ const App = () => {
         {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
         <MaintenanceDialog open={appSettings.maintenanceMode} message={appSettings.maintenanceMessage} />
         <UpdateDialog
-          open={appSettings.hasUpdate && !dismissUpdate && !appSettings.maintenanceMode && !showSplash}
+          open={appSettings.hasUpdate && !isUpdateDismissed && !appSettings.maintenanceMode && !showSplash}
           latestVersion={appSettings.latestVersion}
           onUpdate={() => window.location.reload()}
-          onDismiss={() => setDismissUpdate(true)}
+          onDismiss={() => {
+            localStorage.setItem('dismissedUpdateVersion', appSettings.latestVersion);
+            setDismissUpdate(true);
+          }}
         />
         <BrowserRouter>
           <Routes>
