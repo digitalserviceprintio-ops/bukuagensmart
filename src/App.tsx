@@ -53,7 +53,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const [dismissUpdate, setDismissUpdate] = useState(false);
+  const [dismissUpdate, setDismissUpdate] = useState(() => {
+    const dismissed = localStorage.getItem('dismissedUpdateVersion');
+    return dismissed === 'pending'; // will be checked against actual version below
+  });
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
   const appSettings = useAppSettings();
   return (
