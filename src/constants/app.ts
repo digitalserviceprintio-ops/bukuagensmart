@@ -1,2 +1,4 @@
 export const APP_NAME = 'Buku Agen MD2R';
-export const APP_VERSION = '1.0.0';
+
+declare const __APP_BUILD_VERSION__: string;
+export const APP_VERSION = typeof __APP_BUILD_VERSION__ !== 'undefined' ? __APP_BUILD_VERSION__ : '1.0.0';
