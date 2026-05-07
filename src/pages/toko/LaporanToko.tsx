@@ -131,12 +131,17 @@ export default function LaporanToko() {
 
   const exportPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`Laporan Penjualan ${period === 'daily' ? 'Harian' : 'Bulanan'}`, 14, 20);
+    const periodLabel = period === 'daily' ? 'Harian' : 'Bulanan';
+    doc.setFontSize(14);
+    doc.text(APP_NAME, 14, 16);
+    doc.setFontSize(13);
+    doc.text(`Laporan Penjualan ${periodLabel}`, 14, 24);
     doc.setFontSize(10);
-    doc.text(new Date().toLocaleDateString('id-ID', { dateStyle: 'full' }), 14, 28);
+    doc.text(new Date().toLocaleDateString('id-ID', { dateStyle: 'full' }), 14, 32);
+    doc.setLineWidth(0.3);
+    doc.line(14, 35, 196, 35);
 
-    let y = 40;
+    let y = 44;
     doc.setFontSize(11);
     doc.text(`Total Penjualan: ${formatRupiah(totalSales)}`, 14, y); y += 8;
     doc.text(`Total Diskon: ${formatRupiah(totalDiscount)}`, 14, y); y += 8;
@@ -159,7 +164,7 @@ export default function LaporanToko() {
       y += 6;
     });
 
-    doc.save(`laporan-toko-${period}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`NeoAgenMD2R-LaporanToko-${periodLabel}-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
