@@ -55,12 +55,12 @@ export default function Login() {
       >
         <div className="text-center mb-8">
           <motion.div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-success mb-4 shadow-button"
+            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 mb-4 shadow-button overflow-hidden"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
           >
-            <Shield className="h-8 w-8 text-secondary-foreground" />
+            <img src={logo} alt={APP_NAME} className="w-16 h-16 object-contain" />
           </motion.div>
           <h1 className="text-2xl font-bold text-primary-foreground font-display">{APP_NAME}</h1>
           <p className="text-primary-foreground/70 text-sm mt-1">Manajemen Tarik Tunai & Setor Tunai</p>
