@@ -1,6 +1,6 @@
 {
-  "name": "Buku Agen MD2R",
-  "short_name": "Buku Agen",
+  "name": "Neo Agen MD2R",
+  "short_name": "Neo Agen",
   "description": "Aplikasi catat transaksi agen MD2R",
   "start_url": "/",
   "display": "standalone",
