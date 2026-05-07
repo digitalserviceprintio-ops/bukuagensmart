@@ -69,7 +69,15 @@ export default function Laporan() {
     }
 
     const rows = data as any[];
-    const csv = ['Tanggal,Tipe,Nominal,Fee,Komisi,Pelanggan,Status']
+    const periodLabel = period === 'daily' ? 'Harian' : period === 'weekly' ? 'Mingguan' : 'Bulanan';
+    const dateStr = new Date().toLocaleDateString('id-ID', { dateStyle: 'full' });
+    const header = [
+      `${APP_NAME} - Laporan Transaksi ${periodLabel}`,
+      `Tanggal Cetak: ${dateStr}`,
+      '',
+      'Tanggal,Tipe,Nominal,Fee,Komisi,Pelanggan,Status',
+    ];
+    const csv = header
       .concat(rows.map((r: any) =>
         `${r.created_at},${r.type},${r.amount},${r.fee},${r.commission},${r.customer_name},${r.status}`
       )).join('\n');
@@ -77,7 +85,7 @@ export default function Laporan() {
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `transaksi-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.href = url; a.download = `NeoAgenMD2R-Laporan-${periodLabel}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({ title: 'Data berhasil di-export' });
