@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { APP_NAME } from '@/constants/app';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 
