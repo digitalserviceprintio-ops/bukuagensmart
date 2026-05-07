@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield } from 'lucide-react';
 import { APP_NAME, APP_VERSION } from '@/constants/app';
+import logo from '@/assets/logo.png';
 
 export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
   const [show, setShow] = useState(true);
