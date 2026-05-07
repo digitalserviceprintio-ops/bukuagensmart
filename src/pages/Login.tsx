@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Smartphone, User as UserIcon } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { APP_NAME, APP_VERSION } from '@/constants/app';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
