@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { Package, ShoppingCart, AlertTriangle, TrendingUp, ChevronRight, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '@/hooks/useProducts';
+import { useTokoProfile } from '@/hooks/useTokoProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { formatRupiah } from '@/data/mockData';
 
 export default function TokoDashboard() {
   const navigate = useNavigate();
   const { products, loading } = useProducts();
+  const { profile: tokoProfile } = useTokoProfile();
   const [salesToday, setSalesToday] = useState(0);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function TokoDashboard() {
           <button onClick={() => navigate('/')} className="p-2 rounded-xl bg-primary-foreground/10">
             <ArrowLeft className="h-5 w-5 text-primary-foreground" />
           </button>
-          <h1 className="text-lg font-bold text-primary-foreground">Toko Counter & ATK</h1>
+          <h1 className="text-lg font-bold text-primary-foreground">{tokoProfile.nama || 'Toko Counter & ATK'}</h1>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

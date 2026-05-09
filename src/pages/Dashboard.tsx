@@ -116,13 +116,13 @@ export default function Dashboard() {
                   <ChevronRight className="h-3 w-3 text-primary-foreground/40 group-hover:text-primary-foreground/70 transition-colors" />
                 </div>
                 {tokoProfile.alamat && <p className="text-[10px] text-primary-foreground/50 truncate ml-[18px]">{tokoProfile.alamat}</p>}
-                <p className="text-[9px] text-primary-foreground/30 ml-[18px]">Counter & ATK • Tap untuk atur profil</p>
+                <p className="text-[9px] text-primary-foreground/30 ml-[18px]">{tokoProfile.nama || 'Counter & ATK'} • Tap untuk atur profil</p>
               </>
             ) : (
               <>
                 <p className="text-primary-foreground/70 text-sm">Selamat datang,</p>
                 <div className="flex items-center gap-1">
-                  <h1 className="text-lg font-bold text-primary-foreground">Counter & ATK</h1>
+                  <h1 className="text-lg font-bold text-primary-foreground">{tokoProfile.nama || 'Counter & ATK'}</h1>
                   <ChevronRight className="h-3 w-3 text-primary-foreground/40" />
                 </div>
                 <p className="text-[9px] text-primary-foreground/30">Tap untuk atur profil toko</p>

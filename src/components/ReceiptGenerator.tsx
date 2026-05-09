@@ -28,7 +28,7 @@ export function generateReceiptPDF(tx: ReceiptData, toko?: TokoInfo): jsPDF {
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text(toko?.nama || 'BUKU AGEN', w / 2, y, { align: 'center' });
+  doc.text(toko?.nama || 'Neo Agen MD2R', w / 2, y, { align: 'center' });
   y += 5;
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
@@ -96,7 +96,7 @@ export default function ReceiptButton({ tx, toko }: { tx: ReceiptData; toko?: To
 
   const handleShareWhatsApp = () => {
     const typeLabels: Record<string, string> = { tarik: 'Tarik Tunai', setor: 'Setor Tunai', transfer: 'Transfer' };
-    const header = toko?.nama ? `📄 *STRUK TRANSAKSI - ${toko.nama}*` : `📄 *STRUK TRANSAKSI - BUKU AGEN*`;
+    const header = toko?.nama ? `📄 *STRUK TRANSAKSI - ${toko.nama}*` : `📄 *STRUK TRANSAKSI - Neo Agen MD2R*`;
     const msg = encodeURIComponent(
       `${header}\n\n` +
       `Jenis: ${typeLabels[tx.type] || tx.type}\n` +
