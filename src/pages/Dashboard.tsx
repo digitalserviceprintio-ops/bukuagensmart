@@ -12,6 +12,7 @@ import TopUpModal from '@/components/TopUpModal';
 import LicenseExpiredDialog from '@/components/LicenseExpiredDialog';
 import PromoCarousel from '@/components/PromoCarousel';
 import GlassSkeletonLoader from '@/components/GlassSkeletonLoader';
+import heroIllustration from '@/assets/hero-illustration.png';
 
 interface TxRow {
   id: string;
