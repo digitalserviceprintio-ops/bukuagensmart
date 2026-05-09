@@ -1,8 +1,9 @@
 {
   "name": "Neo Agen MD2R",
   "short_name": "Neo Agen",
+  "id": "/?source=pwa",
   "description": "Aplikasi catat transaksi agen MD2R",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#1a2d42",
   "theme_color": "#1a2d42",
