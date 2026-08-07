@@ -249,6 +249,73 @@ export default function KasirPOS() {
         </Button>
       </div>
 
+      {/* Katalog Produk */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-bold text-foreground">Katalog Produk</h2>
+          <span className="text-[10px] text-muted-foreground">{catalog.length} produk</span>
+        </div>
+        <Input
+          placeholder="Cari di katalog..."
+          value={catalogSearch}
+          onChange={e => setCatalogSearch(e.target.value)}
+          className="mb-2 h-9"
+        />
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+          {categories.map(c => (
+            <button
+              key={c}
+              onClick={() => setActiveCat(c)}
+              className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                activeCat === c
+                  ? 'gradient-primary text-primary-foreground border-transparent'
+                  : 'bg-muted text-muted-foreground border-border'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        {catalog.length === 0 ? (
+          <p className="text-center text-xs text-muted-foreground py-6">Belum ada produk di katalog</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[46vh] overflow-y-auto pr-1">
+            {catalog.map(p => {
+              const inCart = cart.find(i => i.product.id === p.id)?.qty || 0;
+              const habis = p.stock <= 0;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => addToCart(p)}
+                  disabled={habis}
+                  className={`relative text-left bg-card rounded-xl p-2 shadow-card border border-border transition-transform active:scale-95 ${habis ? 'opacity-50' : ''}`}
+                >
+                  {p.photo_url ? (
+                    <img src={p.photo_url} alt={p.name} loading="lazy" className="w-full h-20 object-cover rounded-lg mb-1.5" />
+                  ) : (
+                    <div className="w-full h-20 rounded-lg mb-1.5 bg-muted flex items-center justify-center">
+                      <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">{p.name}</p>
+                  <p className="text-xs font-bold text-secondary mt-0.5">{formatRupiah(p.sell_price)}</p>
+                  <p className={`text-[10px] ${p.stock <= p.min_stock ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    Stok: {p.stock}
+                  </p>
+                  {inCart > 0 && (
+                    <span className="absolute top-1 right-1 min-w-5 h-5 px-1 rounded-full gradient-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                      {inCart}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+
+
       {/* Cart */}
       {cart.length === 0 ? (
         <div className="text-center py-12">
