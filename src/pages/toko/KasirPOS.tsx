@@ -34,6 +34,8 @@ export default function KasirPOS() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [printerOpen, setPrinterOpen] = useState(false);
   const [cashPaid, setCashPaid] = useState(0);
+  const [activeCat, setActiveCat] = useState('Semua');
+  const [catalogSearch, setCatalogSearch] = useState('');
 
   const total = cart.reduce((s, i) => s + i.subtotal, 0);
   const grandTotal = Math.max(0, total - discount);
