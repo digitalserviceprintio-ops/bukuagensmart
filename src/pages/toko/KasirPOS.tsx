@@ -34,6 +34,8 @@ export default function KasirPOS() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [printerOpen, setPrinterOpen] = useState(false);
   const [cashPaid, setCashPaid] = useState(0);
+  const [activeCat, setActiveCat] = useState('Semua');
+  const [catalogSearch, setCatalogSearch] = useState('');
 
   const total = cart.reduce((s, i) => s + i.subtotal, 0);
   const grandTotal = Math.max(0, total - discount);
@@ -213,6 +215,15 @@ export default function KasirPOS() {
     p.name.toLowerCase().includes(search.toLowerCase()) || p.barcode.includes(search)
   ).slice(0, 10);
 
+  const categories = ['Semua', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  const catalog = products.filter(p => {
+    const matchCat = activeCat === 'Semua' || p.category === activeCat;
+    const q = catalogSearch.toLowerCase();
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.barcode || '').includes(q);
+    return matchCat && matchQ;
+  });
+
+
   return (
     <div className="pb-20 min-h-screen px-5 pt-6">
       <div className="flex items-center justify-between mb-4">
@@ -237,6 +248,73 @@ export default function KasirPOS() {
           <Search className="h-4 w-4" /> Cari Produk
         </Button>
       </div>
+
+      {/* Katalog Produk */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-bold text-foreground">Katalog Produk</h2>
+          <span className="text-[10px] text-muted-foreground">{catalog.length} produk</span>
+        </div>
+        <Input
+          placeholder="Cari di katalog..."
+          value={catalogSearch}
+          onChange={e => setCatalogSearch(e.target.value)}
+          className="mb-2 h-9"
+        />
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+          {categories.map(c => (
+            <button
+              key={c}
+              onClick={() => setActiveCat(c)}
+              className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                activeCat === c
+                  ? 'gradient-primary text-primary-foreground border-transparent'
+                  : 'bg-muted text-muted-foreground border-border'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        {catalog.length === 0 ? (
+          <p className="text-center text-xs text-muted-foreground py-6">Belum ada produk di katalog</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[46vh] overflow-y-auto pr-1">
+            {catalog.map(p => {
+              const inCart = cart.find(i => i.product.id === p.id)?.qty || 0;
+              const habis = p.stock <= 0;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => addToCart(p)}
+                  disabled={habis}
+                  className={`relative text-left bg-card rounded-xl p-2 shadow-card border border-border transition-transform active:scale-95 ${habis ? 'opacity-50' : ''}`}
+                >
+                  {p.photo_url ? (
+                    <img src={p.photo_url} alt={p.name} loading="lazy" className="w-full h-20 object-cover rounded-lg mb-1.5" />
+                  ) : (
+                    <div className="w-full h-20 rounded-lg mb-1.5 bg-muted flex items-center justify-center">
+                      <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">{p.name}</p>
+                  <p className="text-xs font-bold text-secondary mt-0.5">{formatRupiah(p.sell_price)}</p>
+                  <p className={`text-[10px] ${p.stock <= p.min_stock ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    Stok: {p.stock}
+                  </p>
+                  {inCart > 0 && (
+                    <span className="absolute top-1 right-1 min-w-5 h-5 px-1 rounded-full gradient-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                      {inCart}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+
 
       {/* Cart */}
       {cart.length === 0 ? (
