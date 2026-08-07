@@ -1,6 +1,8 @@
-import { ArrowLeft, Shield } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { APP_NAME, APP_VERSION } from '@/constants/app';
+import logo from '@/assets/logo.png';
 
 export default function TentangAplikasi() {
   const navigate = useNavigate();
@@ -10,9 +12,24 @@ export default function TentangAplikasi() {
         <ArrowLeft className="h-4 w-4" /> Kembali
       </button>
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-success mb-3 shadow-button">
-          <Shield className="h-8 w-8 text-secondary-foreground" />
-        </div>
+        <motion.div
+          className="relative inline-flex items-center justify-center w-24 h-24 mb-2"
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <motion.div
+            className="absolute inset-0 rounded-full bg-primary/20 blur-2xl"
+            animate={{ scale: [0.9, 1.12, 0.9], opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.img
+            src={logo}
+            alt={APP_NAME}
+            className="relative w-24 h-24 object-contain"
+            animate={{ scale: [1, 1.05, 1], rotate: [-2, 2, -2] }}
+            transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </motion.div>
         <h1 className="text-xl font-bold text-foreground">{APP_NAME}</h1>
         <p className="text-sm text-muted-foreground">Versi {APP_VERSION}</p>
       </div>

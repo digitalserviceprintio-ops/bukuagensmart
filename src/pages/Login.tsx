@@ -56,12 +56,23 @@ export default function Login() {
       >
         <div className="text-center mb-8">
           <motion.div
-            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 mb-4 shadow-button overflow-hidden"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+            className="relative inline-flex items-center justify-center w-28 h-28 mb-3"
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <img src={logo} alt={APP_NAME} className="w-16 h-16 object-contain" />
+            <motion.div
+              className="absolute inset-0 rounded-full bg-white/20 blur-2xl"
+              animate={{ scale: [0.9, 1.12, 0.9], opacity: [0.35, 0.7, 0.35] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.img
+              src={logo}
+              alt={APP_NAME}
+              className="relative w-28 h-28 object-contain drop-shadow-2xl"
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: [1, 1.05, 1], rotate: [-2, 2, -2], opacity: 1 }}
+              transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+            />
           </motion.div>
           <h1 className="text-2xl font-bold text-primary-foreground font-display">{APP_NAME}</h1>
           <p className="text-primary-foreground/70 text-sm mt-1">Manajemen Tarik Tunai & Setor Tunai</p>

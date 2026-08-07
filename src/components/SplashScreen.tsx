@@ -27,11 +27,23 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
             transition={{ duration: 0.6, ease: 'easeOut' }}
           >
             <motion.div
-              className="w-24 h-24 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-button mb-4 overflow-hidden"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative w-28 h-28 flex items-center justify-center mb-4"
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <img src={logo} alt={APP_NAME} className="w-20 h-20 object-contain" />
+              <motion.div
+                className="absolute inset-0 rounded-full bg-white/20 blur-2xl"
+                animate={{ scale: [0.9, 1.15, 0.9], opacity: [0.4, 0.75, 0.4] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.img
+                src={logo}
+                alt={APP_NAME}
+                className="relative w-28 h-28 object-contain drop-shadow-2xl"
+                initial={{ scale: 0.6, rotate: -8, opacity: 0 }}
+                animate={{ scale: [1, 1.06, 1], rotate: [-2, 2, -2], opacity: 1 }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              />
             </motion.div>
             <h1 className="text-2xl font-bold text-primary-foreground mb-1 font-display">{APP_NAME}</h1>
             <p className="text-primary-foreground/60 text-sm">Manajemen Tarik Tunai & Setor Tunai</p>
