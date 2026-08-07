@@ -12,7 +12,7 @@ import TopUpModal from '@/components/TopUpModal';
 import LicenseExpiredDialog from '@/components/LicenseExpiredDialog';
 import PromoCarousel from '@/components/PromoCarousel';
 import GlassSkeletonLoader from '@/components/GlassSkeletonLoader';
-import heroIllustration from '@/assets/hero-illustration.png';
+
 
 interface TxRow {
   id: string;
@@ -148,15 +148,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Hero Illustration */}
-        <div className="flex justify-center mb-4">
-          <img 
-            src={heroIllustration} 
-            alt="Ilustrasi Agen MD2R" 
-            className="h-28 w-auto object-contain drop-shadow-lg"
-            loading="eager"
-          />
-        </div>
 
         {/* Balance Cards */}
         <div className="grid grid-cols-2 gap-3">
