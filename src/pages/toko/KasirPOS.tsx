@@ -213,6 +213,15 @@ export default function KasirPOS() {
     p.name.toLowerCase().includes(search.toLowerCase()) || p.barcode.includes(search)
   ).slice(0, 10);
 
+  const categories = ['Semua', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  const catalog = products.filter(p => {
+    const matchCat = activeCat === 'Semua' || p.category === activeCat;
+    const q = catalogSearch.toLowerCase();
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.barcode || '').includes(q);
+    return matchCat && matchQ;
+  });
+
+
   return (
     <div className="pb-20 min-h-screen px-5 pt-6">
       <div className="flex items-center justify-between mb-4">
