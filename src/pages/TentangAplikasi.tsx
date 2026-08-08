@@ -31,7 +31,7 @@ export default function TentangAplikasi() {
           />
         </motion.div>
         <h1 className="text-xl font-bold text-foreground">{APP_NAME}</h1>
-        <p className="text-sm text-muted-foreground">Versi {APP_VERSION}</p>
+        <p className="text-sm text-muted-foreground">Versi V{APP_VERSION}</p>
       </div>
       <div className="bg-card rounded-2xl p-5 shadow-card space-y-3">
         <p className="text-sm text-foreground leading-relaxed">
