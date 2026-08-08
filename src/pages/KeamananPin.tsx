@@ -47,16 +47,34 @@ export default function KeamananPin() {
       <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-5 shadow-card space-y-4">
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">PIN Lama</label>
-          <Input type="password" value={oldPin} onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))} placeholder="••••••" className="h-12 text-center text-xl tracking-[0.5em]" maxLength={6} />
+          <div className="relative">
+            <Input type={showOld ? 'text' : 'password'} value={oldPin} onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))} placeholder="••••••" className="h-12 text-center text-xl tracking-[0.5em] pr-12" maxLength={6} />
+            <button type="button" onClick={() => setShowOld((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label={showOld ? 'Sembunyikan PIN' : 'Tampilkan PIN'} tabIndex={-1}>
+              <CatEyeIcon open={!showOld} className="h-5 w-5" />
+            </button>
+          </div>
         </div>
+
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">PIN Baru</label>
-          <Input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))} placeholder="••••••" className="h-12 text-center text-xl tracking-[0.5em]" maxLength={6} />
+          <div className="relative">
+            <Input type={showNew ? 'text' : 'password'} value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))} placeholder="••••••" className="h-12 text-center text-xl tracking-[0.5em] pr-12" maxLength={6} />
+            <button type="button" onClick={() => setShowNew((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label={showNew ? 'Sembunyikan PIN' : 'Tampilkan PIN'} tabIndex={-1}>
+              <CatEyeIcon open={!showNew} className="h-5 w-5" />
+            </button>
+          </div>
         </div>
+
         <div>
           <label className="text-sm font-medium text-foreground mb-1.5 block">Konfirmasi PIN Baru</label>
-          <Input type="password" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))} placeholder="••••••" className="h-12 text-center text-xl tracking-[0.5em]" maxLength={6} />
+          <div className="relative">
+            <Input type={showConfirm ? 'text' : 'password'} value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))} placeholder="••••••" className="h-12 text-center text-xl tracking-[0.5em] pr-12" maxLength={6} />
+            <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label={showConfirm ? 'Sembunyikan PIN' : 'Tampilkan PIN'} tabIndex={-1}>
+              <CatEyeIcon open={!showConfirm} className="h-5 w-5" />
+            </button>
+          </div>
         </div>
+
         <Button type="submit" disabled={submitting} className="w-full h-12 gradient-primary shadow-button">
           {submitting ? 'Memproses...' : 'Ubah PIN'}
         </Button>
