@@ -107,8 +107,20 @@ export default function Login() {
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">PIN (min 6 digit)</label>
-              <Input type="password" placeholder="••••••" value={pin} onChange={(e) => { setPin(e.target.value.replace(/\D/g, '')); setError(''); }} className="h-12 text-center text-xl tracking-[0.5em]" maxLength={6} />
+              <div className="relative">
+                <Input type={showPin ? 'text' : 'password'} placeholder="••••••" value={pin} onChange={(e) => { setPin(e.target.value.replace(/\D/g, '')); setError(''); }} className="h-12 text-center text-xl tracking-[0.5em] pr-12" maxLength={6} />
+                <button
+                  type="button"
+                  onClick={() => setShowPin((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPin ? 'Sembunyikan PIN' : 'Tampilkan PIN'}
+                  tabIndex={-1}
+                >
+                  <CatEyeIcon open={!showPin} className="h-5 w-5" />
+                </button>
+              </div>
             </div>
+
             {error && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-destructive text-sm text-center">{error}</motion.p>}
             <Button type="submit" disabled={submitting} className="w-full h-12 text-base font-semibold gradient-primary shadow-button disabled:opacity-50">
               {submitting ? 'Memproses...' : isRegister ? 'Daftar' : 'Masuk'}
