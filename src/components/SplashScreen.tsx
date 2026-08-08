@@ -54,7 +54,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
               />
             </div>
-            <p className="text-primary-foreground/40 text-xs mt-6">v{APP_VERSION}</p>
+            <p className="text-primary-foreground/40 text-xs mt-6">V{APP_VERSION}</p>
           </motion.div>
         </motion.div>
       )}

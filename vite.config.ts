@@ -3,8 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-const now = new Date();
-const buildVersion = `${now.getFullYear() % 100}.${now.getMonth() + 1}.${now.getDate()}.${now.getHours()}${String(now.getMinutes()).padStart(2, '0')}`;
+const buildVersion = '1.0.1';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({

@@ -28,10 +28,10 @@ export default function UpdateDialog({ open, latestVersion, onUpdate, onDismiss 
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center space-y-2">
             <span className="block">
-              Versi baru <span className="font-bold text-foreground">v{latestVersion}</span> telah tersedia.
+              Versi baru <span className="font-bold text-foreground">V{latestVersion}</span> telah tersedia.
             </span>
             <span className="block text-xs text-muted-foreground">
-              Versi Anda saat ini: <span className="font-mono">v{APP_VERSION}</span>
+              Versi Anda saat ini: <span className="font-mono">V{APP_VERSION}</span>
             </span>
             <span className="block text-xs">
               Perbarui sekarang untuk mendapatkan fitur terbaru dan perbaikan bug.
