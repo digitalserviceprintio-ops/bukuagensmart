@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { CatEyeIcon } from '@/components/CatEyeIcon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+
 
 export default function KeamananPin() {
   const navigate = useNavigate();
