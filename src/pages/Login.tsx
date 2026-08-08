@@ -44,8 +44,14 @@ export default function Login() {
         await login(phone, pin);
       }
     } catch (err: any) {
-      setError(err.message === 'Invalid login credentials' ? 'Nomor HP atau PIN salah' : err.message);
+      const msg = String(err?.message ?? '');
+      if (msg === 'Invalid login credentials') setError('Nomor HP atau PIN salah');
+      else if (msg.toLowerCase().includes('weak')) setError('PIN terlalu mudah ditebak, gunakan kombinasi angka lain');
+      else if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already been registered')) setError('Nomor HP sudah terdaftar, silakan masuk');
+      else if (msg.toLowerCase().includes('signups not allowed')) setError('Pendaftaran sedang ditutup, hubungi admin');
+      else setError(msg);
     } finally {
+
       setSubmitting(false);
     }
   };
