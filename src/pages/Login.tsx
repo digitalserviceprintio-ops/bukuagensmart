@@ -14,9 +14,11 @@ export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
   const { user, loading, login, register } = useAuth();
 
   if (!loading && user) {
