@@ -60,8 +60,8 @@ export default function GlassSkeletonLoader({ type = 'dashboard' }: GlassSkeleto
 
   // Dashboard skeleton
   return (
-    <div className="pb-20 min-h-screen">
-      <div className="gradient-hero px-5 pt-6 pb-10 rounded-b-3xl">
+    <div className="pb-20 min-h-screen bg-background">
+      <div className="bg-card px-5 pt-6 pb-6 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <div className="space-y-2 flex-1">
             <SkeletonBar width="40%" height="0.75rem" />
@@ -73,7 +73,7 @@ export default function GlassSkeletonLoader({ type = 'dashboard' }: GlassSkeleto
           {[0, 1].map((i) => (
             <motion.div
               key={i}
-              className="glass rounded-2xl p-4 space-y-2"
+             className="bg-background border border-border rounded-xl p-4 space-y-2"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.1 }}
@@ -84,11 +84,11 @@ export default function GlassSkeletonLoader({ type = 'dashboard' }: GlassSkeleto
           ))}
         </div>
       </div>
-      <div className="px-5 -mt-5 grid grid-cols-3 gap-3">
+      <div className="px-5 mt-5 grid grid-cols-3 gap-3">
         {[0, 1, 2].map((i) => (
           <motion.div
             key={i}
-            className="glass-card rounded-xl p-3 space-y-2"
+            className="bg-card border border-border rounded-xl p-3 space-y-2"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 + i * 0.1 }}
@@ -105,7 +105,7 @@ export default function GlassSkeletonLoader({ type = 'dashboard' }: GlassSkeleto
           {[0, 1, 2, 3].map((i) => (
             <motion.div
               key={i}
-              className="glass-card rounded-xl p-3 space-y-2 flex flex-col items-center"
+              className="bg-card border border-border rounded-xl p-3 space-y-2 flex flex-col items-center"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.7 + i * 0.08 }}
