@@ -1,26 +1,13 @@
+# Perbarui Nama dan Halaman Utama
 
-## Rencana Implementasi
+## Perubahan
+- Ganti nama aplikasi menjadi **Neo Mini ATM** pada tampilan, laporan/struk, judul browser, serta informasi instalasi aplikasi.
+- Ubah halaman utama setelah masuk menjadi dominan putih, bersih, dan minimal tanpa mengubah data atau fungsi transaksi.
+- Rapikan bagian informasi toko, saldo, statistik, aksi cepat, promo, dan transaksi terbaru agar mudah dipindai di layar ponsel.
+- Sesuaikan tampilan saat data dimuat agar konsisten dengan desain halaman utama yang baru.
 
-### 1. Buat tabel `app_settings` di database
-- Menyimpan status maintenance (on/off), pesan maintenance, dan versi terbaru aplikasi
-- Tabel publik tanpa RLS (semua user perlu baca settingan ini)
-
-### 2. Insert data default
-- `maintenance_mode`: false
-- `maintenance_message`: "Aplikasi sedang dalam pemeliharaan"
-- `latest_version`: "1.0.0"
-
-### 3. Buat hook `useAppSettings`
-- Fetch app_settings saat app load
-- Cek apakah maintenance mode aktif
-- Bandingkan versi lokal vs versi di database
-
-### 4. Buat komponen `MaintenanceDialog`
-- Popup fullscreen saat maintenance aktif
-- Tidak bisa ditutup (blocking)
-
-### 5. Buat komponen `UpdateNotification`
-- Popup saat versi di database lebih baru dari versi lokal
-- Tombol "Update Sekarang" yang reload halaman
-
-### 6. Integrasikan di App.tsx
+## Detail Teknis
+- Gunakan token warna yang sudah tersedia dan komponen tombol aplikasi.
+- Pertahankan dukungan mode gelap pada halaman lain; desain putih bersih diterapkan khusus pada halaman utama dalam mode terang.
+- Sinkronkan metadata HTML dan manifest PWA dengan nama baru.
+- Verifikasi tampilan halaman masuk dan halaman utama pada ukuran ponsel, serta pastikan hasil build bebas kesalahan.
