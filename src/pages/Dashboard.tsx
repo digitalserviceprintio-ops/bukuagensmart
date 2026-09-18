@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, Bell, ChevronRight, Store, ShoppingBag, Clock, PlusCircle } from 'lucide-react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Bell, ChevronRight, Store, ShoppingBag, PlusCircle } from 'lucide-react';
 import { formatRupiah } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { useToko } from '@/hooks/useToko';
@@ -112,7 +112,7 @@ export default function Dashboard() {
         <div className="flex items-start justify-between gap-3 mb-6">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-primary mb-1">{APP_NAME}</p>
-            <button onClick={() => navigate('/profil/toko')} className="max-w-full text-left group">
+            <Button variant="ghost" onClick={() => navigate('/profil/toko')} className="max-w-full h-auto p-0 text-left group hover:bg-transparent justify-start whitespace-normal">
             {tokoProfile.nama ? (
               <>
                 <div className="flex items-center gap-1">
@@ -131,7 +131,7 @@ export default function Dashboard() {
                 </div>
               </>
             )}
-          </button>
+            </Button>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <DigitalClock />
@@ -229,9 +229,9 @@ export default function Dashboard() {
       <div className="px-5 mt-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-foreground">Transaksi Terbaru</h2>
-          <button onClick={() => navigate('/transaksi')} className="text-xs text-secondary font-medium flex items-center gap-0.5">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/transaksi')} className="h-8 px-2 text-xs text-primary font-medium">
             Lihat Semua <ChevronRight className="h-3 w-3" />
-          </button>
+          </Button>
         </div>
         {transactions.length === 0 ? (
           <p className="text-center text-muted-foreground text-sm py-4">Belum ada transaksi hari ini</p>
