@@ -164,7 +164,7 @@ export default function LaporanToko() {
       y += 6;
     });
 
-    doc.save(`NeoAgenMD2R-LaporanToko-${periodLabel}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`NeoMiniATM-LaporanToko-${periodLabel}-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
