@@ -12,6 +12,8 @@ import TopUpModal from '@/components/TopUpModal';
 import LicenseExpiredDialog from '@/components/LicenseExpiredDialog';
 import PromoCarousel from '@/components/PromoCarousel';
 import GlassSkeletonLoader from '@/components/GlassSkeletonLoader';
+import { Button } from '@/components/ui/button';
+import { APP_NAME } from '@/constants/app';
 
 
 interface TxRow {
@@ -33,11 +35,11 @@ function DigitalClock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <div className="text-right">
-      <p className="text-xs font-mono font-bold text-primary-foreground">
+    <div className="text-right hidden min-[390px]:block">
+      <p className="text-xs font-mono font-bold text-foreground">
         {now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
       </p>
-      <p className="text-[9px] text-primary-foreground/60">
+      <p className="text-[9px] text-muted-foreground">
         {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
       </p>
     </div>
@@ -104,36 +106,37 @@ export default function Dashboard() {
   const showLicenseDialog = !licLoading && isTrial && (isExpired || (daysLeft !== null && daysLeft <= 5));
 
   return (
-    <div className="pb-20 min-h-screen">
+    <div className="pb-24 min-h-screen bg-background">
       {/* Header */}
-      <div className="gradient-hero px-5 pt-6 pb-10 rounded-b-3xl">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => navigate('/profil/toko')} className="flex-1 min-w-0 text-left group">
+      <header className="bg-card px-5 pt-6 pb-6 border-b border-border">
+        <div className="flex items-start justify-between gap-3 mb-6">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-primary mb-1">{APP_NAME}</p>
+            <button onClick={() => navigate('/profil/toko')} className="max-w-full text-left group">
             {tokoProfile.nama ? (
               <>
                 <div className="flex items-center gap-1">
-                  <Store className="h-3.5 w-3.5 text-primary-foreground/70" />
-                  <p className="text-sm font-bold text-primary-foreground truncate">{tokoProfile.nama}</p>
-                  <ChevronRight className="h-3 w-3 text-primary-foreground/40 group-hover:text-primary-foreground/70 transition-colors" />
+                  <Store className="h-4 w-4 text-muted-foreground" />
+                  <h1 className="text-xl font-bold text-foreground truncate">{tokoProfile.nama}</h1>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </div>
-                {tokoProfile.alamat && <p className="text-[10px] text-primary-foreground/50 truncate ml-[18px]">{tokoProfile.alamat}</p>}
-                <p className="text-[9px] text-primary-foreground/30 ml-[18px]">{tokoProfile.nama || 'Counter & ATK'} • Tap untuk atur profil</p>
+                {tokoProfile.alamat && <p className="text-xs text-muted-foreground truncate ml-5 mt-0.5">{tokoProfile.alamat}</p>}
               </>
             ) : (
               <>
-                <p className="text-primary-foreground/70 text-sm">Selamat datang,</p>
+                <p className="text-muted-foreground text-xs">Selamat datang</p>
                 <div className="flex items-center gap-1">
-                  <h1 className="text-lg font-bold text-primary-foreground">{tokoProfile.nama || 'Counter & ATK'}</h1>
-                  <ChevronRight className="h-3 w-3 text-primary-foreground/40" />
+                  <h1 className="text-xl font-bold text-foreground">Atur Profil Toko</h1>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <p className="text-[9px] text-primary-foreground/30">Tap untuk atur profil toko</p>
               </>
             )}
           </button>
-          <div className="flex items-center gap-2">
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             <DigitalClock />
             {isOpen && (
-              <span className="px-2 py-1 bg-secondary/20 text-secondary text-[10px] font-bold rounded-full flex items-center gap-1">
+              <span className="px-2 py-1 bg-success/10 text-success text-[10px] font-bold rounded-full flex items-center gap-1">
                 <Store className="h-3 w-3" /> BUKA
               </span>
             )}
@@ -142,44 +145,44 @@ export default function Dashboard() {
                 <Store className="h-3 w-3" /> TUTUP
               </span>
             )}
-            <button className="relative p-2 rounded-xl bg-primary-foreground/10">
-              <Bell className="h-5 w-5 text-primary-foreground" />
-            </button>
+            <Button variant="outline" size="icon" aria-label="Notifikasi" className="h-9 w-9 rounded-full">
+              <Bell className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
 
         {/* Balance Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-4 border border-primary-foreground/10">
-            <p className="text-primary-foreground/70 text-[10px] font-medium mb-1">Saldo Kas</p>
-            <p className="text-xl font-bold text-primary-foreground">{formatRupiah(balance)}</p>
+        <div className="grid grid-cols-2 divide-x divide-border rounded-xl border border-border bg-background overflow-hidden">
+          <div className="p-4 min-w-0">
+            <div className="flex items-center gap-2 mb-2"><Wallet className="h-4 w-4 text-primary" /><p className="text-muted-foreground text-[11px] font-medium">Saldo Kas</p></div>
+            <p className="text-lg font-bold text-foreground truncate">{formatRupiah(balance)}</p>
             {isOpen && tokoHariIni && (
-              <p className="text-primary-foreground/40 text-[9px] mt-1">
+              <p className="text-muted-foreground text-[9px] mt-1">
                 Awal: {formatRupiah(Number(tokoHariIni.saldo_kas_awal))}
               </p>
             )}
           </div>
-          <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-4 border border-primary-foreground/10">
-            <p className="text-primary-foreground/70 text-[10px] font-medium mb-1">Saldo Rekening</p>
-            <p className="text-xl font-bold text-primary-foreground">{formatRupiah(saldoRekening)}</p>
+          <div className="p-4 min-w-0">
+            <div className="flex items-center gap-2 mb-2"><ArrowLeftRight className="h-4 w-4 text-info" /><p className="text-muted-foreground text-[11px] font-medium">Saldo Rekening</p></div>
+            <p className="text-lg font-bold text-foreground truncate">{formatRupiah(saldoRekening)}</p>
             {isOpen && tokoHariIni && (
-              <p className="text-primary-foreground/40 text-[9px] mt-1">
+              <p className="text-muted-foreground text-[9px] mt-1">
                 Awal: {formatRupiah(Number(tokoHariIni.saldo_rekening_awal))}
               </p>
             )}
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Stats Row */}
-      <div className="px-5 -mt-5 grid grid-cols-3 gap-3">
+      <div className="px-5 mt-5 grid grid-cols-3 gap-2">
         {[
           { label: 'Transaksi', value: summary.count.toString(), icon: ArrowDownLeft, color: 'text-info' },
           { label: 'Volume', value: formatRupiah(summary.volume), icon: ArrowUpRight, color: 'text-secondary' },
           { label: 'Komisi', value: formatRupiah(summary.commission), icon: TrendingUp, color: 'text-warning' },
         ].map((stat) => (
-          <div key={stat.label} className="bg-card rounded-xl p-3 shadow-card animate-slide-up">
+          <div key={stat.label} className="bg-card rounded-xl p-3 border border-border animate-slide-up min-w-0">
             <stat.icon className={`h-4 w-4 ${stat.color} mb-1`} />
             <p className="text-[10px] text-muted-foreground">{stat.label}</p>
             <p className="text-sm font-bold text-foreground truncate">{stat.value}</p>
@@ -190,28 +193,28 @@ export default function Dashboard() {
       {/* Tutup Toko Button */}
       {isOpen && (
         <div className="px-5 mt-4">
-          <button onClick={() => setTutupOpen(true)} className="w-full bg-destructive/10 rounded-xl p-3 flex items-center justify-center gap-2 active:scale-95 transition-transform">
+          <Button variant="ghost" onClick={() => setTutupOpen(true)} className="w-full bg-destructive/10 hover:bg-destructive/15 text-destructive rounded-xl">
             <Store className="h-4 w-4 text-destructive" />
             <span className="text-sm font-semibold text-destructive">Tutup Toko</span>
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Quick Actions */}
       <div className="px-5 mt-6">
         <h2 className="text-sm font-semibold text-foreground mb-3">Aksi Cepat</h2>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-2">
           {[
-            { label: 'Tarik Tunai', icon: ArrowDownLeft, gradient: 'gradient-primary', path: '/transaksi' },
-            { label: 'Setor Tunai', icon: ArrowUpRight, gradient: 'gradient-success', path: '/transaksi' },
-            { label: 'Transfer', icon: Wallet, gradient: 'gradient-primary', path: '/transaksi' },
-            { label: 'Top Up', icon: PlusCircle, gradient: 'gradient-success', action: () => setTopUpOpen(true) },
-            { label: 'Toko', icon: ShoppingBag, gradient: 'gradient-primary', path: '/toko' },
+            { label: 'Tarik Tunai', icon: ArrowDownLeft, tone: 'bg-primary/10 text-primary', path: '/transaksi' },
+            { label: 'Setor Tunai', icon: ArrowUpRight, tone: 'bg-success/10 text-success', path: '/transaksi' },
+            { label: 'Transfer', icon: Wallet, tone: 'bg-info/10 text-info', path: '/transaksi' },
+            { label: 'Top Up', icon: PlusCircle, tone: 'bg-warning/10 text-warning', action: () => setTopUpOpen(true) },
+            { label: 'Toko', icon: ShoppingBag, tone: 'bg-secondary/10 text-secondary', path: '/toko' },
           ].map((action) => (
-            <button key={action.label} onClick={() => action.action ? action.action() : navigate(action.path!)} className={`${action.gradient} rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-button active:scale-95 transition-transform`}>
-              <action.icon className="h-5 w-5 text-primary-foreground" />
-              <span className="text-[10px] font-semibold text-primary-foreground">{action.label}</span>
-            </button>
+            <Button key={action.label} variant="ghost" onClick={() => action.action ? action.action() : action.path && navigate(action.path)} className="h-auto min-h-[74px] p-2 flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card hover:bg-muted/50 whitespace-normal">
+              <span className={`h-8 w-8 rounded-lg flex items-center justify-center ${action.tone}`}><action.icon className="h-4 w-4" /></span>
+              <span className="text-[10px] leading-tight font-semibold text-foreground text-center">{action.label}</span>
+            </Button>
           ))}
         </div>
       </div>
@@ -235,7 +238,7 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-2">
             {transactions.slice(0, 4).map((tx) => (
-              <div key={tx.id} className="bg-card rounded-xl p-3 flex items-center gap-3 shadow-card animate-fade-in">
+              <div key={tx.id} className="bg-card rounded-xl p-3 flex items-center gap-3 border border-border animate-fade-in">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                   tx.type === 'tarik' ? 'bg-destructive/10' : tx.type === 'setor' ? 'bg-secondary/10' : 'bg-info/10'
                 }`}>

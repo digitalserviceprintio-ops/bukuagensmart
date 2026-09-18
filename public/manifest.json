@@ -1,12 +1,12 @@
 {
-  "name": "Neo Agen MD2R",
-  "short_name": "Neo Agen",
+  "name": "Neo Mini ATM",
+  "short_name": "Mini ATM",
   "id": "/?source=pwa",
-  "description": "Aplikasi catat transaksi agen MD2R",
+  "description": "Aplikasi pengelolaan transaksi Mini ATM",
   "start_url": "/?source=pwa",
   "display": "standalone",
-  "background_color": "#1a2d42",
-  "theme_color": "#1a2d42",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
     {
