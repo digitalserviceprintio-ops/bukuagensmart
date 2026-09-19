@@ -32,6 +32,7 @@ import ManajemenProduk from "./pages/toko/ManajemenProduk";
 import KasirPOS from "./pages/toko/KasirPOS";
 import ManajemenStok from "./pages/toko/ManajemenStok";
 import LaporanToko from "./pages/toko/LaporanToko";
+import LaporanHarian from "./pages/toko/LaporanHarian";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,7 @@ const App = () => {
             <Route path="/toko/kasir" element={<ProtectedRoute><KasirPOS /></ProtectedRoute>} />
             <Route path="/toko/stok" element={<ProtectedRoute><ManajemenStok /></ProtectedRoute>} />
             <Route path="/toko/laporan" element={<ProtectedRoute><LaporanToko /></ProtectedRoute>} />
+            <Route path="/toko/laporan/harian" element={<ProtectedRoute><LaporanHarian /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
