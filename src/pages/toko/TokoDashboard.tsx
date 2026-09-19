@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Package, ShoppingCart, AlertTriangle, TrendingUp, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Package, ShoppingCart, AlertTriangle, TrendingUp, ChevronRight, ArrowLeft, CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '@/hooks/useProducts';
 import { useTokoProfile } from '@/hooks/useTokoProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { formatRupiah } from '@/data/mockData';
+import { Button } from '@/components/ui/button';
 
 export default function TokoDashboard() {
   const navigate = useNavigate();
@@ -37,33 +38,32 @@ export default function TokoDashboard() {
     { label: 'Manajemen Produk', desc: 'Tambah, edit, hapus produk', icon: Package, path: '/toko/produk', color: 'bg-info/10 text-info' },
     { label: 'Kasir / POS', desc: 'Transaksi penjualan', icon: ShoppingCart, path: '/toko/kasir', color: 'bg-secondary/10 text-secondary' },
     { label: 'Manajemen Stok', desc: 'Riwayat stok masuk/keluar', icon: TrendingUp, path: '/toko/stok', color: 'bg-warning/10 text-warning' },
-    { label: 'Laporan Toko', desc: 'Penjualan & keuntungan', icon: TrendingUp, path: '/toko/laporan', color: 'bg-primary/10 text-primary' },
+    { label: 'Laporan Harian', desc: 'Ringkasan penjualan hari ini', icon: CalendarDays, path: '/toko/laporan/harian', color: 'bg-primary/10 text-primary' },
+    { label: 'Laporan Toko', desc: 'Tren 7 hari & 6 bulan', icon: TrendingUp, path: '/toko/laporan', color: 'bg-warning/10 text-warning' },
   ];
 
   return (
     <div className="pb-20 min-h-screen">
-      <div className="gradient-hero px-5 pt-6 pb-8 rounded-b-3xl">
+      <div className="bg-card px-5 pt-6 pb-6 border-b border-border">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={() => navigate('/')} className="p-2 rounded-xl bg-primary-foreground/10">
-            <ArrowLeft className="h-5 w-5 text-primary-foreground" />
-          </button>
-          <h1 className="text-lg font-bold text-primary-foreground">{tokoProfile.nama || 'Toko Counter & ATK'}</h1>
+          <Button variant="outline" size="icon" onClick={() => navigate('/')}><ArrowLeft className="h-5 w-5" /></Button>
+          <div><p className="text-xs font-semibold text-primary">DASHBOARD TOKO</p><h1 className="text-xl font-bold text-foreground">{tokoProfile.nama || 'Neo Mini ATM'}</h1></div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card/10 backdrop-blur-sm rounded-xl p-3 border border-primary-foreground/10">
-            <Package className="h-4 w-4 text-primary-foreground/70 mb-1" />
-            <p className="text-primary-foreground/60 text-[10px]">Total Produk</p>
-            <p className="text-xl font-bold text-primary-foreground">{products.length}</p>
+          <div className="bg-background rounded-lg p-3 border border-border">
+            <Package className="h-4 w-4 text-primary mb-1" />
+            <p className="text-muted-foreground text-[10px]">Total Produk</p>
+            <p className="text-xl font-bold text-foreground">{products.length}</p>
           </div>
-          <div className="bg-card/10 backdrop-blur-sm rounded-xl p-3 border border-primary-foreground/10">
-            <ShoppingCart className="h-4 w-4 text-primary-foreground/70 mb-1" />
-            <p className="text-primary-foreground/60 text-[10px]">Total Stok</p>
-            <p className="text-xl font-bold text-primary-foreground">{totalStock}</p>
+          <div className="bg-background rounded-lg p-3 border border-border">
+            <ShoppingCart className="h-4 w-4 text-primary mb-1" />
+            <p className="text-muted-foreground text-[10px]">Total Stok</p>
+            <p className="text-xl font-bold text-foreground">{totalStock}</p>
           </div>
-          <div className="bg-card/10 backdrop-blur-sm rounded-xl p-3 border border-primary-foreground/10 col-span-2">
-            <TrendingUp className="h-4 w-4 text-primary-foreground/70 mb-1" />
-            <p className="text-primary-foreground/60 text-[10px]">Penjualan Hari Ini</p>
+          <div className="bg-primary rounded-lg p-3 col-span-2">
+            <TrendingUp className="h-4 w-4 text-primary-foreground/80 mb-1" />
+            <p className="text-primary-foreground/80 text-[10px]">Penjualan Hari Ini</p>
             <p className="text-xl font-bold text-primary-foreground">{formatRupiah(salesToday)}</p>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function TokoDashboard() {
       {/* Menu */}
       <div className="px-5 mt-4 space-y-2">
         {menuItems.map((item) => (
-          <button key={item.label} onClick={() => navigate(item.path)} className="w-full bg-card rounded-xl p-4 flex items-center gap-3 shadow-card text-left">
+          <Button key={item.label} variant="ghost" onClick={() => navigate(item.path)} className="w-full h-auto bg-card rounded-lg p-4 flex items-center gap-3 border border-border shadow-card text-left justify-start">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.color}`}>
               <item.icon className="h-5 w-5" />
             </div>
@@ -99,7 +99,7 @@ export default function TokoDashboard() {
               <p className="text-[10px] text-muted-foreground">{item.desc}</p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </button>
+          </Button>
         ))}
       </div>
     </div>
